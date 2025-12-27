@@ -34,7 +34,9 @@ export default function RootLayout({
           <TopNav />
         </Suspense>
         {children}
-        <Toaster />
+        <Suspense>
+          <Toaster />
+        </Suspense>
       </body>
     </html>
   );
