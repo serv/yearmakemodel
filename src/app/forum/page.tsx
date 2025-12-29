@@ -1,6 +1,7 @@
 import { TagFilter } from "@/components/forum/tag-filter";
 import { PostCard } from "@/components/forum/post-card";
 import { getPosts } from "@/app/actions/posts";
+import { getUniqueTagValues } from "@/app/actions/tags";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -11,15 +12,17 @@ export default async function ForumPage({ searchParams }: { searchParams: Promis
   const make = params.make as string | undefined;
   const model = params.model as string | undefined;
 
-  // Filter logic (passed to getPosts)
-  // Simplified for this demo
-  const posts = await getPosts();
+  const [posts, years, makes] = await Promise.all([
+    getPosts(),
+    getUniqueTagValues('year'),
+    getUniqueTagValues('make')
+  ]);
 
   return (
     <div className="container mx-auto py-6 grid grid-cols-1 md:grid-cols-12 gap-6">
       <aside className="md:col-span-3">
         <Suspense fallback={<div>Loading filters...</div>}>
-            <TagFilter />
+            <TagFilter availableYears={years} availableMakes={makes} />
         </Suspense>
         <div className="mt-4">
             <Link href="/forum/new">
