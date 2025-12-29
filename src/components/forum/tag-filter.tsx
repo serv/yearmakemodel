@@ -15,15 +15,26 @@ import { Button } from '@/components/ui/button';
 interface TagFilterProps {
   availableYears: string[];
   availableMakes: string[];
+  availableModels: string[];
+  makeModelMap: Record<string, string[]>;
 }
 
-export function TagFilter({ availableYears, availableMakes }: TagFilterProps) {
+export function TagFilter({
+  availableYears,
+  availableMakes,
+  availableModels,
+  makeModelMap,
+}: TagFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [year, setYear] = useState(searchParams.get('year') || '');
   const [make, setMake] = useState(searchParams.get('make') || '');
   const [model, setModel] = useState(searchParams.get('model') || '');
+
+  // Derived models based on selected make
+  const filteredModels =
+    make && make !== 'all' && makeModelMap[make] ? makeModelMap[make] : availableModels;
 
   // Update state when URL changes
   useEffect(() => {
@@ -34,12 +45,25 @@ export function TagFilter({ availableYears, availableMakes }: TagFilterProps) {
 
   const updateFilters = useCallback(() => {
     const params = new URLSearchParams();
-    if (year) params.set('year', year);
-    if (make) params.set('make', make);
-    if (model) params.set('model', model);
+    if (year && year !== 'all') params.set('year', year);
+    if (make && make !== 'all') params.set('make', make);
+    if (model && model !== 'all') params.set('model', model);
 
     router.push(`/forum?${params.toString()}`);
   }, [year, make, model, router]);
+
+  const handleMakeChange = (val: string) => {
+    setMake(val);
+    // Reset model when make changes if the current model doesn't belong to the new make
+    if (val !== 'all' && model && makeModelMap[val] && !makeModelMap[val].includes(model)) {
+      setModel('');
+    } else if (val === 'all') {
+      // Keep model if 'all' is selected (shows all models), or maybe reset?
+      // Usually clearing make allows any model, but if a specific model was selected, it's still valid in the global list.
+      // However, for better UX, we might want to keep it or let user decide.
+      // Let's keep it for now unless it conflicts logic, but since we show availableModels (all) when make is all, it's fine.
+    }
+  };
 
   return (
     <div className="p-4 space-y-4 border rounded-lg">
@@ -69,12 +93,7 @@ export function TagFilter({ availableYears, availableMakes }: TagFilterProps) {
 
       <div className="space-y-2">
         <Label>Make</Label>
-        <Select
-          value={make}
-          onValueChange={(val) => {
-            setMake(val);
-          }}
-        >
+        <Select value={make} onValueChange={handleMakeChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select Make" />
           </SelectTrigger>
@@ -91,13 +110,32 @@ export function TagFilter({ availableYears, availableMakes }: TagFilterProps) {
 
       <div className="space-y-2">
         <Label>Model</Label>
-        {/* Simple input for Model as we don't have all models in frontend constant */}
-        <input
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="Type model..."
+        <Select
           value={model}
-          onChange={(e) => setModel(e.target.value)}
-        />
+          onValueChange={(val) => {
+            setModel(val);
+          }}
+          disabled={!make || make === 'all'} // Optional: disable if no make selected?
+          // Actually user request says "The model should be filtered by the make".
+          // If no make selected, we show all models (availableModels).
+          // If make selected, we show filteredModels.
+          // Disabling is a design choice. Let's keep it enabled but showing all or filtered.
+          // BUT commonly, choosing a model implies a make. If we pick 'Camry', we know it's Toyota.
+          // However, the current data structure is loose tags.
+          // Let's stick to: If Make selected -> Filter Models. If Make NOT selected -> Show All Models.
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select Model" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Models</SelectItem>
+            {filteredModels.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Button onClick={updateFilters} className="w-full">
