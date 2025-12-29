@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface TagFilterProps {
   availableYears: string[];
@@ -28,26 +28,28 @@ export function TagFilter({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [year, setYear] = useState(searchParams.get('year') || '');
-  const [make, setMake] = useState(searchParams.get('make') || '');
-  const [model, setModel] = useState(searchParams.get('model') || '');
+  const [year, setYear] = useState(searchParams.get("year") || "");
+  const [make, setMake] = useState(searchParams.get("make") || "");
+  const [model, setModel] = useState(searchParams.get("model") || "");
 
   // Derived models based on selected make
   const filteredModels =
-    make && make !== 'all' && makeModelMap[make] ? makeModelMap[make] : availableModels;
+    make && make !== "all" && makeModelMap[make]
+      ? makeModelMap[make]
+      : availableModels;
 
   // Update state when URL changes
   useEffect(() => {
-    setYear(searchParams.get('year') || '');
-    setMake(searchParams.get('make') || '');
-    setModel(searchParams.get('model') || '');
+    setYear(searchParams.get("year") || "");
+    setMake(searchParams.get("make") || "");
+    setModel(searchParams.get("model") || "");
   }, [searchParams]);
 
   const updateFilters = useCallback(() => {
     const params = new URLSearchParams();
-    if (year && year !== 'all') params.set('year', year);
-    if (make && make !== 'all') params.set('make', make);
-    if (model && model !== 'all') params.set('model', model);
+    if (year && year !== "all") params.set("year", year);
+    if (make && make !== "all") params.set("make", make);
+    if (model && model !== "all") params.set("model", model);
 
     router.push(`/forum?${params.toString()}`);
   }, [year, make, model, router]);
@@ -55,9 +57,14 @@ export function TagFilter({
   const handleMakeChange = (val: string) => {
     setMake(val);
     // Reset model when make changes if the current model doesn't belong to the new make
-    if (val !== 'all' && model && makeModelMap[val] && !makeModelMap[val].includes(model)) {
-      setModel('');
-    } else if (val === 'all') {
+    if (
+      val !== "all" &&
+      model &&
+      makeModelMap[val] &&
+      !makeModelMap[val].includes(model)
+    ) {
+      setModel("");
+    } else if (val === "all") {
       // Keep model if 'all' is selected (shows all models), or maybe reset?
       // Usually clearing make allows any model, but if a specific model was selected, it's still valid in the global list.
       // However, for better UX, we might want to keep it or let user decide.
@@ -115,7 +122,7 @@ export function TagFilter({
           onValueChange={(val) => {
             setModel(val);
           }}
-          disabled={!make || make === 'all'} // Optional: disable if no make selected?
+          disabled={!make || make === "all"} // Optional: disable if no make selected?
           // Actually user request says "The model should be filtered by the make".
           // If no make selected, we show all models (availableModels).
           // If make selected, we show filteredModels.
@@ -142,7 +149,11 @@ export function TagFilter({
         Apply Filters
       </Button>
       {(year || make || model) && (
-        <Button variant="outline" onClick={() => router.push('/forum')} className="w-full mt-2">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/forum")}
+          className="w-full mt-2"
+        >
           Clear
         </Button>
       )}

@@ -1,13 +1,13 @@
-import { getUserCars, deleteCar } from '@/app/actions/cars';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { getUserCars, deleteCar } from "@/app/actions/cars";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
 
 export default async function GaragePage() {
   // Mock user ID - in prod use auth()
-  const userId = '00000000-0000-0000-0000-000000000000';
+  const userId = "00000000-0000-0000-0000-000000000000";
   const cars = await getUserCars(userId);
 
   return (

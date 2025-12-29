@@ -1,16 +1,24 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Filter, Star } from 'lucide-react';
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Filter, Star } from "lucide-react";
 
-export function TopNav() {
+type Car = {
+  id: string;
+  year: number;
+  make: string;
+  model: string;
+  trim?: string | null;
+};
+
+export function TopNav({ favorites = [] }: { favorites?: Car[] }) {
   const searchParams = useSearchParams();
-  const year = searchParams.get('year');
-  const make = searchParams.get('make');
-  const model = searchParams.get('model');
+  const year = searchParams.get("year");
+  const make = searchParams.get("make");
+  const model = searchParams.get("model");
 
   const activeTags = [year, make, model].filter(Boolean);
 
@@ -37,12 +45,20 @@ export function TopNav() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Star className="h-4 w-4 text-muted-foreground" aria-label="Favorite filters" />
-          {/* This would ideally come from user profile/garage */}
-          <Link href="/forum?year=2023&make=Toyota&model=Supra">
-            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
-              My Supra
-            </Badge>
-          </Link>
+          {favorites.length > 0 ? (
+            favorites.map((car) => (
+              <Link
+                key={car.id}
+                href={`/forum?year=${car.year}&make=${car.make}&model=${car.model}`}
+              >
+                <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+                  {car.year} {car.make} {car.model}
+                </Badge>
+              </Link>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground italic">No favorites</span>
+          )}
         </div>
         <div className="h-6 w-px bg-border mx-2" />
         <Link href="/garage">

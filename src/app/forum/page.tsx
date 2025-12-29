@@ -1,10 +1,10 @@
-import { TagFilter } from '@/components/forum/tag-filter';
-import { PostCard } from '@/components/forum/post-card';
-import { getPosts } from '@/app/actions/posts';
-import { getUniqueTagValues, getMakeModelMap } from '@/app/actions/tags';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Suspense } from 'react';
+import { TagFilter } from "@/components/forum/tag-filter";
+import { PostCard } from "@/components/forum/post-card";
+import { getPosts } from "@/app/actions/posts";
+import { getUniqueTagValues, getMakeModelMap } from "@/app/actions/tags";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Suspense } from "react";
 
 export default async function ForumPage({
   searchParams,
@@ -18,9 +18,9 @@ export default async function ForumPage({
 
   const [posts, years, makes, models, makeModelMap] = await Promise.all([
     getPosts(),
-    getUniqueTagValues('year'),
-    getUniqueTagValues('make'),
-    getUniqueTagValues('model'),
+    getUniqueTagValues("year"),
+    getUniqueTagValues("make"),
+    getUniqueTagValues("model"),
     getMakeModelMap(),
   ]);
 
@@ -44,7 +44,8 @@ export default async function ForumPage({
 
       <main className="md:col-span-9 space-y-4">
         <h1 className="text-2xl font-bold mb-4">
-          Viewing: {year || 'Any Year'} {make || 'Any Make'} {model || 'Any Model'}
+          Viewing: {year || "Any Year"} {make || "Any Make"}{" "}
+          {model || "Any Model"}
         </h1>
 
         {posts.length === 0 ? (
@@ -53,7 +54,10 @@ export default async function ForumPage({
           </div>
         ) : (
           posts.map((wrapper: any) => (
-            <PostCard key={wrapper.post.id} post={{ ...wrapper.post, author: wrapper.author }} />
+            <PostCard
+              key={wrapper.post.id}
+              post={{ ...wrapper.post, author: wrapper.author }}
+            />
           ))
         )}
       </main>
