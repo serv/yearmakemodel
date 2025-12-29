@@ -4,13 +4,24 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { addCar } from "@/app/actions/cars";
 import { useRouter } from "next/navigation";
-// In real app, import toast from sonner
+import { MAKES, MODELS } from "@/lib/constants";
 
 export default function AddCarPage() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [selectedMake, setSelectedMake] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
+
+  const availableModels = selectedMake ? MODELS[selectedMake] || [] : [];
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,6 +48,11 @@ export default function AddCarPage() {
     }
   }
 
+  const handleMakeChange = (value: string) => {
+    setSelectedMake(value);
+    setSelectedModel("");
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-md">
       <h1 className="text-2xl font-bold mb-6">Add a Car</h1>
@@ -56,13 +72,41 @@ export default function AddCarPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="make">Make *</Label>
-            <Input id="make" name="make" required placeholder="Toyota" />
+            <Select name="make" value={selectedMake} onValueChange={handleMakeChange} required>
+              <SelectTrigger id="make">
+                <SelectValue placeholder="Select Make" />
+              </SelectTrigger>
+              <SelectContent>
+                {MAKES.map((make) => (
+                  <SelectItem key={make} value={make}>
+                    {make}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="model">Model *</Label>
-          <Input id="model" name="model" required placeholder="Camry" />
+          <Select 
+            name="model" 
+            value={selectedModel} 
+            onValueChange={setSelectedModel} 
+            disabled={!selectedMake}
+            required
+          >
+            <SelectTrigger id="model">
+              <SelectValue placeholder={selectedMake ? "Select Model" : "Select Make First"} />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModels.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">
@@ -78,15 +122,29 @@ export default function AddCarPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="transmission">Transmission</Label>
-            <Input
-              id="transmission"
-              name="transmission"
-              placeholder="Automatic"
-            />
+            <Select name="transmission">
+              <SelectTrigger id="transmission">
+                <SelectValue placeholder="Select Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Automatic">Automatic</SelectItem>
+                <SelectItem value="Manual">Manual</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="drivetrain">Drivetrain</Label>
-            <Input id="drivetrain" name="drivetrain" placeholder="FWD, AWD" />
+            <Select name="drivetrain">
+              <SelectTrigger id="drivetrain">
+                <SelectValue placeholder="Select Drivetrain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FWD">FWD</SelectItem>
+                <SelectItem value="RWD">RWD</SelectItem>
+                <SelectItem value="AWD">AWD</SelectItem>
+                <SelectItem value="4WD">4WD</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
