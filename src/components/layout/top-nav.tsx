@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Filter, Star } from "lucide-react";
+import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Filter, Star, X } from 'lucide-react';
 
 type Car = {
   id: string;
@@ -15,12 +15,24 @@ type Car = {
 };
 
 export function TopNav({ favorites = [] }: { favorites?: Car[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const year = searchParams.get("year");
-  const make = searchParams.get("make");
-  const model = searchParams.get("model");
+  const year = searchParams.get('year');
+  const make = searchParams.get('make');
+  const model = searchParams.get('model');
 
-  const activeTags = [year, make, model].filter(Boolean);
+  const activeTags = [
+    { key: 'year', value: year },
+    { key: 'make', value: make },
+    { key: 'model', value: model },
+  ].filter((tag): tag is { key: string; value: string } => Boolean(tag.value));
+
+  const removeFilter = (key: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(key);
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   return (
     <div className="w-full h-14 border-b bg-background flex items-center px-4 justify-between sticky top-0 z-50">
@@ -31,9 +43,16 @@ export function TopNav({ favorites = [] }: { favorites?: Car[] }) {
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" aria-label="Active filters" />
           {activeTags.length > 0 ? (
-            activeTags.map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {tag}
+            activeTags.map((tag) => (
+              <Badge key={tag.key} variant="secondary" className="text-xs flex items-center gap-1">
+                {tag.value}
+                <button
+                  onClick={() => removeFilter(tag.key)}
+                  className="hover:bg-muted rounded-full p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                  <span className="sr-only">Remove {tag.key} filter</span>
+                </button>
               </Badge>
             ))
           ) : (
