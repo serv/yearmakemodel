@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { cars } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -29,4 +29,9 @@ export async function addCar(userId: string, data: z.infer<typeof carSchema>) {
 
 export async function getUserCars(userId: string) {
     return await db.select().from(cars).where(eq(cars.userId, userId));
+}
+
+export async function deleteCar(userId: string, carId: string) {
+    await db.delete(cars).where(eq(cars.id, carId));
+    revalidatePath('/garage');
 }
