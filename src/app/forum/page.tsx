@@ -25,7 +25,7 @@ export default async function ForumPage({
   ]);
 
   return (
-    <div className="container mx-auto py-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+    <div className="container mx-auto py-6 grid grid-cols-1 md:grid-cols-12 gap-4">
       <aside className="md:col-span-3">
         <Suspense fallback={<div>Loading filters...</div>}>
           <TagFilter
@@ -42,8 +42,8 @@ export default async function ForumPage({
         </div>
       </aside>
 
-      <main className="md:col-span-9 space-y-4">
-        <h1 className="text-2xl font-bold mb-4">
+      <main className="md:col-span-9 space-y-2">
+        <h1 className="text-2xl font-bold mb-2">
           Viewing: {year || "Any Year"} {make || "Any Make"}{" "}
           {model || "Any Model"}
         </h1>
