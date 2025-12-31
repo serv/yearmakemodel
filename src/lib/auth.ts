@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import * as schema from "./db/schema";
 import { nextCookies } from "better-auth/next-js";
+import { magicLink } from "better-auth/plugins";
 import redis from "./redis";
 
 export const auth = betterAuth({
@@ -38,11 +39,13 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  magicLink: {
-    sendMagicLink: async ({ email, token, url }: { email: string; token: string; url: string }) => {
-      // TODO: Implement email sending logic
-      console.log(`Magic link for ${email}: ${url}`);
-    },
-  },
-  plugins: [nextCookies()],
+  plugins: [
+    nextCookies(),
+    magicLink({
+      sendMagicLink: async ({ email, token, url }: { email: string; token: string; url: string }) => {
+        // TODO: Implement email sending logic
+        console.log(`Magic link for ${email}: ${url}`);
+      },
+    }),
+  ],
 });
