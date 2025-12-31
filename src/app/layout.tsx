@@ -5,6 +5,8 @@ import { Suspense } from 'react';
 import { TopNav } from '../components/layout/top-nav';
 import { Toaster } from '@/components/ui/sonner';
 import { getUserCars } from '@/app/actions/cars';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -26,14 +28,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Mock user ID; replace with real auth user in production
-  const userId = '00000000-0000-0000-0000-000000000000';
-  const favorites = await getUserCars(userId);
+  // Fetch session
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  // If logged in, fetch favorites. Otherwise empty.
+  const favorites = session ? await getUserCars(session.user.id) : [];
+  
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Suspense>
-          <TopNav favorites={favorites} />
+          <TopNav favorites={favorites} session={session} />
         </Suspense>
         {children}
         <Suspense>

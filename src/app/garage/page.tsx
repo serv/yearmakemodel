@@ -1,4 +1,7 @@
 import { getUserCars, deleteCar } from "@/app/actions/cars";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +9,15 @@ import Link from "next/link";
 import { Trash2 } from "lucide-react";
 
 export default async function GaragePage() {
-  // Mock user ID - in prod use auth()
-  const userId = "00000000-0000-0000-0000-000000000000";
-  const cars = await getUserCars(userId);
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/sign-in");
+  }
+
+  const cars = await getUserCars(session.user.id);
 
   return (
     <div className="container mx-auto py-8">
@@ -39,7 +48,8 @@ export default async function GaragePage() {
                   </CardTitle>
                   {car.trim && <Badge variant="outline">{car.trim}</Badge>}
                 </div>
-                <form action={deleteCar.bind(null, userId, car.id)}>
+
+                <form action={deleteCar.bind(null, car.id)}>
                   <Button
                     variant="ghost"
                     size="icon"
