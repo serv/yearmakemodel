@@ -24,7 +24,7 @@ export const tagTypeEnum = pgEnum("tag_type", [
 
 // Users
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
@@ -42,7 +42,7 @@ export const sessions = pgTable("sessions", {
   updatedAt: timestamp("updated_at").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id),
 });
@@ -51,7 +51,7 @@ export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id),
   accessToken: text("access_token"),
@@ -84,7 +84,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 // Posts
 export const posts = pgTable("posts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   title: text("title").notNull(),
@@ -109,7 +109,7 @@ export const comments = pgTable("comments", {
   postId: uuid("post_id")
     .references(() => posts.id)
     .notNull(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   parentId: uuid("parent_id"), // For nested comments
@@ -187,7 +187,7 @@ export const votes = pgTable(
   "votes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
+    userId: text("user_id")
       .references(() => users.id)
       .notNull(),
     postId: uuid("post_id").references(() => posts.id),
@@ -222,7 +222,7 @@ export const votesRelations = relations(votes, ({ one }) => ({
 // Cars (Garage)
 export const cars = pgTable("cars", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   year: integer("year").notNull(),

@@ -6,8 +6,7 @@ const redis = createClient({
 
 redis.on("error", (err) => console.log("Redis Client Error", err));
 
-if (!process.env.NEXT_RUNTIME) {
-  // Prevent connection during build
+if (!redis.isOpen) {
   redis.connect();
 }
 
