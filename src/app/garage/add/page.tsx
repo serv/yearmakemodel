@@ -29,8 +29,7 @@ export default function AddCarPage() {
     const formData = new FormData(event.currentTarget);
 
     try {
-      await addCar("00000000-0000-0000-0000-000000000000", {
-        // Mock user ID
+      await addCar({
         year: parseInt(formData.get("year") as string),
         make: formData.get("make") as string,
         model: formData.get("model") as string,
