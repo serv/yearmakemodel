@@ -5,13 +5,23 @@ import { votes, users } from "@/lib/db/schema";
 import { updateUserKarma } from "@/lib/karma";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function votePost(
-  userId: string,
   postId: string,
   value: number,
   authorId: string,
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const userId = session.user.id;
   if (value !== 1 && value !== -1) return;
 
   // Check existing vote

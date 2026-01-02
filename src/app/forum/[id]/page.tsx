@@ -8,12 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea"; // Assuming generic textarea or use standard
 import { Badge } from "@/components/ui/badge";
 import { CommentThread } from "@/components/forum/comment-thread";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default async function PostPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const params = await props.params;
   const { id } = params;
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   // Fetch post
   const [post] = await db
@@ -40,8 +47,9 @@ export default async function PostPage(props: {
 
   async function addComment(formData: FormData) {
     "use server";
+    if (!session) return;
     const content = formData.get("content") as string;
-    const currentUserId = post.post.userId; // Mock: using author as current user for demo
+    const currentUserId = session.user.id;
     await createComment(currentUserId, id, content);
   }
 
@@ -66,7 +74,7 @@ export default async function PostPage(props: {
           <VoteButtons
             postId={id}
             initialScore={0}
-            userId={post.post.userId} // Mock
+            userId={session?.user.id || ""}
             authorId={post.post.userId}
           />
         </div>

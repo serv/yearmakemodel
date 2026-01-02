@@ -5,6 +5,8 @@ import { getUniqueTagValues, getMakeModelMap } from "@/app/actions/tags";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Suspense } from "react";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export default async function ForumPage({
   searchParams,
@@ -17,6 +19,10 @@ export default async function ForumPage({
   const model = params.model as string | undefined;
 
   const { MAKES, MODELS, YEARS } = await import("@/lib/constants");
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   const [posts] = await Promise.all([
     getPosts({
@@ -62,6 +68,7 @@ export default async function ForumPage({
             <PostCard
               key={wrapper.post.id}
               post={{ ...wrapper.post, author: wrapper.author }}
+              currentUserId={session?.user.id || ""}
             />
           ))
         )}

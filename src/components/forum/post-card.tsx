@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { VoteButtons } from './vote-buttons';
 
-export function PostCard({ post, userVote }: { post: any; userVote?: number }) {
+export function PostCard({ post, userVote, currentUserId }: { post: any; userVote?: number; currentUserId: string }) {
   // Mock data handling if relations aren't fully populated
   const author = post.author || { name: 'Unknown' };
 
@@ -15,7 +15,7 @@ export function PostCard({ post, userVote }: { post: any; userVote?: number }) {
           postId={post.id}
           initialScore={0} // TODO: fetch actual score
           initialUserVote={userVote}
-          userId={'00000000-0000-0000-0000-000000000000'} // TODO: Get from session
+          userId={currentUserId}
           authorId={post.userId}
         />
       </div>

@@ -45,7 +45,7 @@ export function VoteButtons({
 
     startTransition(async () => {
       setOptimisticState(value);
-      await votePost(userId, postId, value, authorId);
+      await votePost(postId, value, authorId);
     });
   };
 
