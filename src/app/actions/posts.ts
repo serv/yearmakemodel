@@ -40,16 +40,42 @@ export async function createPost(
   const tagNames = Object.values(data.tags).filter(Boolean) as string[];
 
   if (tagNames.length > 0) {
-    const foundTags = await db
+    // 1. Get existing tags
+    const existingTags = await db
       .select()
       .from(tags)
       .where(inArray(tags.name, tagNames));
+    
+    const existingTagNames = new Set(existingTags.map(t => t.name));
+    
+    // 2. Identify missing tags
+    const tagsToCreate: { name: string; type: "year" | "make" | "model" | "trim" | "drivetrain" | "transmission" }[] = [];
+    
+    Object.entries(data.tags).forEach(([key, value]) => {
+      if (value && !existingTagNames.has(value)) {
+        // Warning: This assumes values are unique across types or we don't care about type mismatch for same name for now.
+        // Actually, schema has unique (name, type).
+        // If "2023" is year, it's fine.
+        tagsToCreate.push({ name: value, type: key as any });
+      }
+    });
 
-    for (const tag of foundTags) {
-      await db.insert(postTags).values({
-        postId: post.id,
-        tagId: tag.id,
-      });
+    // 3. Create missing tags
+    let newTags: typeof existingTags = [];
+    if (tagsToCreate.length > 0) {
+      newTags = await db.insert(tags).values(tagsToCreate).returning();
+    }
+
+    // 4. Link all tags
+    const allTags = [...existingTags, ...newTags];
+    
+    if (allTags.length > 0) {
+      await db.insert(postTags).values(
+        allTags.map(tag => ({
+          postId: post.id,
+          tagId: tag.id,
+        }))
+      );
     }
   }
 
@@ -63,19 +89,46 @@ export async function getPosts(filters?: {
   model?: string[];
 }) {
   // Basic implementation of filtering
-  // This requires complex joins for proper filtering by multiple tags logic
-  // For MVP, we fetch posts and their tags.
+  const conditions = [];
 
-  // More efficient:
-  /*
-    SELECT p.*, count(t.id) as matched_tags 
-    FROM posts p
-    JOIN post_tags pt ON p.id = pt.post_id
-    JOIN tags t ON pt.tag_id = t.id
-    WHERE t.name IN (values)
-    GROUP BY p.id
-    HAVING count(t.id) = required_count
-    */
+  if (filters?.make && filters.make.length > 0) {
+    const makeIds = await db
+      .select({ postId: postTags.postId })
+      .from(postTags)
+      .innerJoin(tags, eq(postTags.tagId, tags.id))
+      .where(and(eq(tags.type, "make"), inArray(tags.name, filters.make)));
+    conditions.push(makeIds.map((r) => r.postId));
+  }
+
+  if (filters?.model && filters.model.length > 0) {
+    const modelIds = await db
+      .select({ postId: postTags.postId })
+      .from(postTags)
+      .innerJoin(tags, eq(postTags.tagId, tags.id))
+      .where(and(eq(tags.type, "model"), inArray(tags.name, filters.model)));
+    conditions.push(modelIds.map((r) => r.postId));
+  }
+
+  if (filters?.year && filters.year.length > 0) {
+    const yearIds = await db
+      .select({ postId: postTags.postId })
+      .from(postTags)
+      .innerJoin(tags, eq(postTags.tagId, tags.id))
+      .where(and(eq(tags.type, "year"), inArray(tags.name, filters.year)));
+    conditions.push(yearIds.map((r) => r.postId));
+  }
+
+  let validPostIds: string[] | undefined;
+  
+  if (conditions.length > 0) {
+    // Intersect
+    validPostIds = conditions.reduce((a, b) => a.filter((c) => b.includes(c)));
+    
+    // If intersection is empty, return empty array immediately
+    if (validPostIds.length === 0) {
+        return [];
+    }
+  }
 
   let query = db
     .select({
@@ -86,8 +139,9 @@ export async function getPosts(filters?: {
     .leftJoin(users, eq(posts.userId, users.id))
     .orderBy(desc(posts.createdAt));
 
-  // For now, return all posts and filter in memory or enhance query later for specific filters
-  // A proper filter implementation needs dynamic query building
+  if (validPostIds) {
+    query.where(inArray(posts.id, validPostIds));
+  }
 
   return await query;
 }

@@ -122,14 +122,9 @@ export function TagFilter({
           onValueChange={(val) => {
             setModel(val);
           }}
-          disabled={!make || make === "all"} // Optional: disable if no make selected?
-          // Actually user request says "The model should be filtered by the make".
-          // If no make selected, we show all models (availableModels).
-          // If make selected, we show filteredModels.
-          // Disabling is a design choice. Let's keep it enabled but showing all or filtered.
-          // BUT commonly, choosing a model implies a make. If we pick 'Camry', we know it's Toyota.
-          // However, the current data structure is loose tags.
-          // Let's stick to: If Make selected -> Filter Models. If Make NOT selected -> Show All Models.
+          // Model selection is always enabled now.
+          // If a make is selected, the list is filtered.
+          // If no make is selected, the list contains all models.
         >
           <SelectTrigger>
             <SelectValue placeholder="Select Model" />

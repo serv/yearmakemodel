@@ -16,23 +16,28 @@ export default async function ForumPage({
   const make = params.make as string | undefined;
   const model = params.model as string | undefined;
 
-  const [posts, years, makes, models, makeModelMap] = await Promise.all([
-    getPosts(),
-    getUniqueTagValues("year"),
-    getUniqueTagValues("make"),
-    getUniqueTagValues("model"),
-    getMakeModelMap(),
+  const { MAKES, MODELS, YEARS } = await import("@/lib/constants");
+
+  const [posts] = await Promise.all([
+    getPosts({
+      year: year && year !== "all" ? [year] : undefined,
+      make: make && make !== "all" ? [make] : undefined,
+      model: model && model !== "all" ? [model] : undefined,
+    }),
   ]);
+  
+  // Use constants for filters
+  const allModels = Object.values(MODELS).flat().sort();
 
   return (
     <div className="container mx-auto py-6 grid grid-cols-1 md:grid-cols-12 gap-4">
       <aside className="md:col-span-3">
         <Suspense fallback={<div>Loading filters...</div>}>
           <TagFilter
-            availableYears={years}
-            availableMakes={makes}
-            availableModels={models}
-            makeModelMap={makeModelMap}
+            availableYears={YEARS}
+            availableMakes={MAKES}
+            availableModels={allModels}
+            makeModelMap={MODELS}
           />
         </Suspense>
         <div className="mt-4">
