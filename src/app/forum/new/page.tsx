@@ -8,8 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPost } from "@/app/actions/posts";
 import { useRouter } from "next/navigation";
 
-// Mock user ID - valid UUID
-const CURRENT_USER_ID = "00000000-0000-0000-0000-000000000000";
+
 
 export default function NewPostPage() {
   const router = useRouter();
@@ -21,7 +20,7 @@ export default function NewPostPage() {
     const formData = new FormData(event.currentTarget);
 
     try {
-      await createPost(CURRENT_USER_ID, {
+      await createPost({
         title: formData.get("title") as string,
         content: formData.get("content") as string,
         tags: {

@@ -6,8 +6,10 @@ import { tagSchema, validateTags } from "@/lib/forum-rules";
 import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
 export async function createPost(
-  userId: string,
   data: {
     title: string;
     content: string;
@@ -21,6 +23,15 @@ export async function createPost(
     };
   },
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  
+  const userId = session.user.id;
   validateTags(data.tags);
 
   const [post] = await db
