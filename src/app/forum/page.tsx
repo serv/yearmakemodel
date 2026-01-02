@@ -69,6 +69,8 @@ export default async function ForumPage({
               key={wrapper.post.id}
               post={{ ...wrapper.post, author: wrapper.author }}
               currentUserId={session?.user.id || ""}
+              userVote={wrapper.userVote}
+              score={wrapper.score}
             />
           ))
         )}

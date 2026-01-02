@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { VoteButtons } from './vote-buttons';
 
-export function PostCard({ post, userVote, currentUserId }: { post: any; userVote?: number; currentUserId: string }) {
+export function PostCard({ post, userVote, currentUserId, score }: { post: any; userVote?: number; currentUserId: string; score: number }) {
   // Mock data handling if relations aren't fully populated
   const author = post.author || { name: 'Unknown' };
 
@@ -13,7 +13,7 @@ export function PostCard({ post, userVote, currentUserId }: { post: any; userVot
         {/* We need current user ID for voting, passing generic placeholder for now */}
         <VoteButtons
           postId={post.id}
-          initialScore={0} // TODO: fetch actual score
+          initialScore={score}
           initialUserVote={userVote}
           userId={currentUserId}
           authorId={post.userId}

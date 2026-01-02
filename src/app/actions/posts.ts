@@ -1,9 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, postTags, tags, users } from "@/lib/db/schema";
+import { posts, postTags, tags, users, votes } from "@/lib/db/schema";
 import { tagSchema, validateTags } from "@/lib/forum-rules";
 import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/lib/auth";
@@ -100,6 +101,10 @@ export async function getPosts(filters?: {
   model?: string[];
 }) {
   // Basic implementation of filtering
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const currentUserId = session?.user.id;
   const conditions = [];
 
   if (filters?.make && filters.make.length > 0) {
@@ -141,13 +146,25 @@ export async function getPosts(filters?: {
     }
   }
 
+  const userVotes = alias(votes, "user_votes");
+
   let query = db
     .select({
       post: posts,
       author: users,
+      score: sql<number>`COALESCE(SUM(${votes.value}), 0)`.mapWith(Number),
+      userVote: sql<number>`COALESCE((
+        SELECT ${userVotes.value} 
+        FROM ${votes} as user_votes
+        WHERE ${userVotes.postId} = ${posts.id} 
+        AND ${userVotes.userId} = ${currentUserId || '00000000-0000-0000-0000-000000000000'}
+        LIMIT 1
+      ), 0)`.mapWith(Number),
     })
     .from(posts)
     .leftJoin(users, eq(posts.userId, users.id))
+    .leftJoin(votes, eq(posts.id, votes.postId))
+    .groupBy(posts.id, users.id)
     .orderBy(desc(posts.createdAt));
 
   if (validPostIds) {
