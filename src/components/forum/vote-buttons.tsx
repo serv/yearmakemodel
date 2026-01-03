@@ -50,25 +50,27 @@ export function VoteButtons({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1 bg-muted/30 p-2 rounded-lg">
+    <div className="flex flex-col items-center gap-1 bg-muted/50 p-1 rounded-xl border shadow-sm">
       <Button
-        variant={optimisticState.userVote === 1 ? "default" : "ghost"}
+        variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0 rounded-full"
+        className={`h-8 w-8 p-0 rounded-lg hover:bg-background ${optimisticState.userVote === 1 ? "text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400" : "text-muted-foreground"}`}
         onClick={() => handleVote(1)}
         disabled={isPending}
       >
-        ▲
+        <ArrowBigUp className={`w-6 h-6 ${optimisticState.userVote === 1 ? "fill-current" : ""}`} />
       </Button>
-      <span className="font-bold text-sm">{optimisticState.score}</span>
+      <span className={`font-bold text-sm ${optimisticState.userVote === 1 ? "text-green-600 dark:text-green-400" : optimisticState.userVote === -1 ? "text-red-600 dark:text-red-400" : "text-foreground"}`}>
+        {optimisticState.score}
+      </span>
       <Button
-        variant={optimisticState.userVote === -1 ? "destructive" : "ghost"}
+        variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0 rounded-full"
+        className={`h-8 w-8 p-0 rounded-lg hover:bg-background ${optimisticState.userVote === -1 ? "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400" : "text-muted-foreground"}`}
         onClick={() => handleVote(-1)}
         disabled={isPending}
       >
-        ▼
+        <ArrowBigDown className={`w-6 h-6 ${optimisticState.userVote === -1 ? "fill-current" : ""}`} />
       </Button>
     </div>
   );

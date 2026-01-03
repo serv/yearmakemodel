@@ -21,35 +21,44 @@ export async function votePost(
     throw new Error("Unauthorized");
   }
 
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized: User not found in session");
+  }
+
   const userId = session.user.id;
   if (value !== 1 && value !== -1) return;
 
-  // Check existing vote
-  const existingVote = await db.query.votes.findFirst({
-    where: and(eq(votes.userId, userId), eq(votes.postId, postId)),
-  });
-
-  if (existingVote) {
-    if (existingVote.value === value) {
-      // Remove vote (toggle)
-      await db.delete(votes).where(eq(votes.id, existingVote.id));
-      await updateUserKarma(authorId, -value);
-    } else {
-      // Change vote
-      await db
-        .update(votes)
-        .set({ value })
-        .where(eq(votes.id, existingVote.id));
-      await updateUserKarma(authorId, value * 2); // Reverse previous and apply new
-    }
-  } else {
-    // New vote
-    await db.insert(votes).values({
-      userId,
-      postId,
-      value,
+  try {
+    // Check existing vote
+    const existingVote = await db.query.votes.findFirst({
+      where: and(eq(votes.userId, userId), eq(votes.postId, postId)),
     });
-    await updateUserKarma(authorId, value);
+
+    if (existingVote) {
+      if (existingVote.value === value) {
+        // Remove vote (toggle)
+        await db.delete(votes).where(eq(votes.id, existingVote.id));
+        await updateUserKarma(authorId, -value);
+      } else {
+        // Change vote
+        await db
+          .update(votes)
+          .set({ value })
+          .where(eq(votes.id, existingVote.id));
+        await updateUserKarma(authorId, value * 2); // Reverse previous and apply new
+      }
+    } else {
+      // New vote
+      await db.insert(votes).values({
+        userId,
+        postId,
+        value,
+      });
+      await updateUserKarma(authorId, value);
+    }
+  } catch (error) {
+    console.error("Failed to vote:", error);
+    throw new Error("Failed to vote");
   }
 
   revalidatePath(`/forum`);
