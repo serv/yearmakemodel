@@ -8,15 +8,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-const carSchema = z.object({
-  year: z.number().int().min(1900).max(2026),
-  make: z.string().min(1),
-  model: z.string().min(1),
-  trim: z.string().optional(),
-  color: z.string().optional(),
-  drivetrain: z.string().optional(),
-  transmission: z.string().optional(),
-});
+import { carSchema } from "@/lib/validations";
 
 export async function addCar(data: z.infer<typeof carSchema>) {
   const session = await auth.api.getSession({
@@ -62,5 +54,49 @@ export async function deleteCar(carId: string) {
   }
 
   await db.delete(cars).where(eq(cars.id, carId));
+  revalidatePath("/garage");
+}
+
+export async function getCar(carId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const car = await db.query.cars.findFirst({
+    where: and(eq(cars.id, carId), eq(cars.userId, session.user.id)),
+  });
+
+  return car;
+}
+
+export async function updateCar(carId: string, data: z.infer<typeof carSchema>) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const validData = carSchema.parse(data);
+
+  // Ensure the car belongs to the user
+  const car = await db.query.cars.findFirst({
+    where: and(eq(cars.id, carId), eq(cars.userId, session.user.id)),
+  });
+
+  if (!car) {
+    throw new Error("Car not found or unauthorized");
+  }
+
+  await db
+    .update(cars)
+    .set(validData)
+    .where(eq(cars.id, carId));
+
   revalidatePath("/garage");
 }
