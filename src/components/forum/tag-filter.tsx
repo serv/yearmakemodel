@@ -51,7 +51,7 @@ export function TagFilter({
     if (make && make !== "all") params.set("make", make);
     if (model && model !== "all") params.set("model", model);
 
-    router.push(`/forum?${params.toString()}`);
+    router.push(`/?${params.toString()}`);
   }, [year, make, model, router]);
 
   const handleMakeChange = (val: string) => {
@@ -146,7 +146,7 @@ export function TagFilter({
       {(year || make || model) && (
         <Button
           variant="outline"
-          onClick={() => router.push("/forum")}
+          onClick={() => router.push("/")}
           className="w-full mt-2"
         >
           Clear

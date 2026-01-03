@@ -91,7 +91,7 @@ export async function createPost(
     }
   }
 
-  revalidatePath("/forum");
+  revalidatePath("/");
   return post;
 }
 

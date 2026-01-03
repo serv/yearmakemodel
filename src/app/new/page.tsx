@@ -29,7 +29,7 @@ export default function NewPostPage() {
           model: (formData.get("model") as string) || undefined,
         },
       });
-      router.push("/forum");
+      router.push("/");
     } catch (error) {
       console.error(error);
       alert("Failed to create post: " + (error as Error).message);

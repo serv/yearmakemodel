@@ -27,7 +27,7 @@ export function PostCard({ post, userVote, currentUserId, score }: { post: any; 
             <Badge variant="outline">2023</Badge>
             <Badge variant="outline">Toyota</Badge>
           </div>
-          <Link href={`/forum/${post.id}`} className="hover:underline">
+          <Link href={`/post/${post.id}`} className="hover:underline">
             <CardTitle className="text-base leading-tight">{post.title}</CardTitle>
           </Link>
           <div className="text-xs text-muted-foreground">

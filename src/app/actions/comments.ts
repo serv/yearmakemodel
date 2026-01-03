@@ -17,5 +17,5 @@ export async function createComment(
     parentId,
   });
 
-  revalidatePath(`/forum/${postId}`);
+  revalidatePath(`/post/${postId}`);
 }

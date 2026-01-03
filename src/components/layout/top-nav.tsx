@@ -80,7 +80,7 @@ export function TopNav({ favorites = [], session }: { favorites?: Car[], session
             favorites.map((car) => (
               <Link
                 key={car.id}
-                href={`/forum?year=${car.year}&make=${car.make}&model=${car.model}`}
+                href={`/?year=${car.year}&make=${car.make}&model=${car.model}`}
               >
                 <Badge variant="outline" className="cursor-pointer hover:bg-accent">
                   {car.year} {car.make} {car.model}

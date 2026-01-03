@@ -61,6 +61,6 @@ export async function votePost(
     throw new Error("Failed to vote");
   }
 
-  revalidatePath(`/forum`);
-  revalidatePath(`/forum/${postId}`);
+  revalidatePath(`/`);
+  revalidatePath(`/post/${postId}`);
 }
