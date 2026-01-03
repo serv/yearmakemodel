@@ -50,7 +50,7 @@ export function TopNav({ favorites = [], session }: { favorites?: Car[], session
     <div className="w-full h-14 border-b bg-background flex items-center px-4 justify-between sticky top-0 z-50">
       <div className="flex items-center gap-4">
         <Link href="/" className="font-bold text-lg mr-4">
-          CarForum
+          YearMake&Model
         </Link>
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" aria-label="Active filters" />
