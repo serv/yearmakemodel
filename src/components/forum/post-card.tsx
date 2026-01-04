@@ -22,6 +22,7 @@ export function PostCard({
   score,
   commentCount,
   isSaved,
+  tags,
 }: {
   post: any;
   userVote?: number;
@@ -29,9 +30,14 @@ export function PostCard({
   score: number;
   commentCount: number;
   isSaved: boolean;
+  tags?: { name: string; type: string }[];
 }) {
   const author = post.author || { name: "Unknown" };
   const isAuthor = currentUserId === post.userId;
+
+  const yearTag = tags?.find((t) => t.type === "year");
+  const makeTag = tags?.find((t) => t.type === "make");
+  const modelTag = tags?.find((t) => t.type === "model");
 
   return (
     <Card className="flex flex-row overflow-hidden gap-0 py-0 relative group">
@@ -70,12 +76,21 @@ export function PostCard({
             </CardTitle>
           </Link>
           <div className="flex gap-1 mt-1">
-            <Badge variant="secondary" className="text-xs font-normal">
-              2023
-            </Badge>
-            <Badge variant="secondary" className="text-xs font-normal">
-              Toyota
-            </Badge>
+            {yearTag && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {yearTag.name}
+              </Badge>
+            )}
+            {makeTag && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {makeTag.name}
+              </Badge>
+            )}
+            {modelTag && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {modelTag.name}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="px-4 py-1 pb-2 flex-grow">

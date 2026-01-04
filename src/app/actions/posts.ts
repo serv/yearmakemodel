@@ -175,6 +175,20 @@ export async function getPosts(filters?: {
         WHERE ${userSaved.postId} = ${posts.id} 
         AND ${userSaved.userId} = ${currentUserId || "00000000-0000-0000-0000-000000000000"}
       ) > 0 THEN true ELSE false END`.mapWith(Boolean),
+      tags: sql<{ name: string; type: string }[]>`(
+        SELECT COALESCE(
+          json_agg(
+            json_build_object(
+              'name', ${tags.name}, 
+              'type', ${tags.type}
+            )
+          ), 
+          '[]'::json
+        )
+        FROM ${postTags}
+        INNER JOIN ${tags} ON ${postTags.tagId} = ${tags.id}
+        WHERE ${postTags.postId} = ${posts.id}
+      )`.mapWith((val: any) => val),
     })
     .from(posts)
     .leftJoin(users, eq(posts.userId, users.id))

@@ -73,6 +73,7 @@ export default async function Home({
               score={wrapper.score}
               commentCount={wrapper.commentCount}
               isSaved={wrapper.isSaved}
+              tags={wrapper.tags}
             />
           ))
         )}
