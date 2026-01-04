@@ -281,6 +281,26 @@ export async function hidePost(postId: string) {
   }
 }
 
+export async function unhidePost(postId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  await db
+    .delete(hiddenPosts)
+    .where(
+      and(
+        eq(hiddenPosts.postId, postId),
+        eq(hiddenPosts.userId, session.user.id),
+      ),
+    );
+  revalidatePath("/");
+}
+
 export async function reportPost(postId: string, reason: string) {
   const session = await auth.api.getSession({
     headers: await headers(),

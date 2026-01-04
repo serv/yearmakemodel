@@ -22,6 +22,7 @@ export function PostCard({
   score,
   commentCount,
   isSaved,
+  isHidden,
   tags,
 }: {
   post: any;
@@ -30,6 +31,7 @@ export function PostCard({
   score: number;
   commentCount: number;
   isSaved: boolean;
+  isHidden?: boolean;
   tags?: { name: string; type: string }[];
 }) {
   const author = post.author || { name: "Unknown" };
@@ -47,6 +49,7 @@ export function PostCard({
         currentUserId={currentUserId}
         isAuthor={isAuthor}
         isSaved={isSaved}
+        isHidden={isHidden}
         className="absolute top-2 right-2"
       />
 

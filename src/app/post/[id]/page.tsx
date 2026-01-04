@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { posts, users, comments, votes, tags, savedPosts } from "@/lib/db/schema";
+import { posts, users, comments, votes, tags, savedPosts, hiddenPosts } from "@/lib/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { VoteButtons } from "@/components/forum/vote-buttons";
@@ -51,6 +51,7 @@ export default async function PostPage(props: {
   // 3. Fetch User Vote
   let userVoteValue = 0;
   let isSaved = false;
+  let isHidden = false;
 
   if (userId) {
     const userVote = await db.query.votes.findFirst({
@@ -64,6 +65,11 @@ export default async function PostPage(props: {
       where: and(eq(savedPosts.postId, id), eq(savedPosts.userId, userId)),
     });
     isSaved = !!saved;
+
+    const hidden = await db.query.hiddenPosts.findFirst({
+        where: and(eq(hiddenPosts.postId, id), eq(hiddenPosts.userId, userId)),
+    });
+    isHidden = !!hidden;
   }
 
   // 4. Fetch Comments
@@ -95,6 +101,7 @@ export default async function PostPage(props: {
             currentUserId={userId || ""}
             isAuthor={isAuthor}
             isSaved={isSaved}
+            isHidden={isHidden}
             className="absolute top-4 right-4 sm:top-6 sm:right-6"
         />
         <div className="flex flex-col sm:flex-row gap-6">

@@ -31,6 +31,7 @@ export async function getUserPosts(userId: string) {
 
   const userVotes = alias(votes, "user_votes");
   const userSaved = alias(savedPosts, "user_saved");
+  const userHidden = alias(hiddenPosts, "user_hidden");
 
   let query = db
     .select({
@@ -54,6 +55,12 @@ export async function getUserPosts(userId: string) {
         FROM ${savedPosts} as user_saved
         WHERE ${userSaved.postId} = ${posts.id} 
         AND ${userSaved.userId} = ${currentUserId || "00000000-0000-0000-0000-000000000000"}
+      ) > 0 THEN true ELSE false END`.mapWith(Boolean),
+      isHidden: sql<boolean>`CASE WHEN (
+        SELECT count(*)
+        FROM ${hiddenPosts} as user_hidden
+        WHERE ${userHidden.postId} = ${posts.id} 
+        AND ${userHidden.userId} = ${currentUserId || "00000000-0000-0000-0000-000000000000"}
       ) > 0 THEN true ELSE false END`.mapWith(Boolean),
       tags: sql<{ name: string; type: string }[]>`(
         SELECT COALESCE(
@@ -108,6 +115,7 @@ export async function getUserSavedPosts() {
 
   const userVotes = alias(votes, "user_votes");
   const userSaved = alias(savedPosts, "user_saved");
+  const userHidden = alias(hiddenPosts, "user_hidden");
 
   // Join savedPosts -> posts
   let query = db
@@ -128,6 +136,12 @@ export async function getUserSavedPosts() {
         WHERE ${comments.postId} = ${posts.id}
       )`.mapWith(Number),
       isSaved: sql<boolean>`true`.mapWith(Boolean), // By definition true
+      isHidden: sql<boolean>`CASE WHEN (
+        SELECT count(*)
+        FROM ${hiddenPosts} as user_hidden
+        WHERE ${userHidden.postId} = ${posts.id} 
+        AND ${userHidden.userId} = ${currentUserId}
+      ) > 0 THEN true ELSE false END`.mapWith(Boolean),
       tags: sql<{ name: string; type: string }[]>`(
         SELECT COALESCE(
           json_agg(
@@ -188,6 +202,7 @@ export async function getUserHiddenPosts() {
         WHERE ${userSaved.postId} = ${posts.id} 
         AND ${userSaved.userId} = ${currentUserId}
       ) > 0 THEN true ELSE false END`.mapWith(Boolean),
+      isHidden: sql<boolean>`true`.mapWith(Boolean), // By definition true
       tags: sql<{ name: string; type: string }[]>`(
         SELECT COALESCE(
           json_agg(

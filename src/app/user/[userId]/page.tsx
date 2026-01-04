@@ -79,6 +79,7 @@ export default async function UserProfilePage({
               tags={postData.tags}
               userVote={postData.userVote}
               isSaved={true} // It is in saved tab
+              isHidden={postData.isHidden}
             />
           ))}
         </div>
@@ -105,6 +106,7 @@ export default async function UserProfilePage({
               tags={postData.tags}
               userVote={postData.userVote}
               isSaved={postData.isSaved}
+              isHidden={true}
             />
           ))}
         </div>
@@ -128,6 +130,7 @@ export default async function UserProfilePage({
               tags={postData.tags}
               userVote={postData.userVote}
               isSaved={postData.isSaved}
+              isHidden={postData.isHidden}
             />
           ))}
         </div>

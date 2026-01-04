@@ -5,6 +5,7 @@ import {
   Flag,
   Bookmark,
   EyeOff,
+  Eye,
   Trash2,
   Pencil,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   toggleSavePost,
   hidePost,
+  unhidePost,
   deletePost,
   reportPost,
 } from "@/app/actions/posts";
@@ -30,6 +32,7 @@ interface PostActionsProps {
   currentUserId: string;
   isAuthor: boolean;
   isSaved: boolean;
+  isHidden?: boolean;
   className?: string; // Allow custom positioning
 }
 
@@ -38,6 +41,7 @@ export function PostActions({
   currentUserId,
   isAuthor,
   isSaved,
+  isHidden,
   className,
 }: PostActionsProps) {
   const router = useRouter();
@@ -55,13 +59,15 @@ export function PostActions({
   const handleHide = async () => {
     if (!currentUserId) return;
     try {
-      await hidePost(postId);
-      toast.success("Post hidden");
-      // If hiding from single post page, maybe redirect? For now just visual.
-      // On feed it disappears. On single page it might stay but be "hidden" state.
-      // Let's assume user stays on page.
+      if (isHidden) {
+        await unhidePost(postId);
+        toast.success("Post unhidden");
+      } else {
+        await hidePost(postId);
+        toast.success("Post hidden");
+      }
     } catch (e) {
-      toast.error("Failed to hide post");
+      toast.error(isHidden ? "Failed to unhide post" : "Failed to hide post");
     }
   };
 
@@ -116,8 +122,17 @@ export function PostActions({
                 {isSaved ? "Unsave" : "Save"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleHide}>
-                <EyeOff className="mr-2 h-4 w-4" />
-                Hide
+                {isHidden ? (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Unhide
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="mr-2 h-4 w-4" />
+                    Hide
+                  </>
+                )}
               </DropdownMenuItem>
               {isAuthor && (
                 <>
