@@ -31,7 +31,7 @@ export default async function Home({
       model: model && model !== "all" ? [model] : undefined,
     }),
   ]);
-  
+
   // Use constants for filters
   const allModels = Object.values(MODELS).flat().sort();
 
@@ -71,6 +71,8 @@ export default async function Home({
               currentUserId={session?.user.id || ""}
               userVote={wrapper.userVote}
               score={wrapper.score}
+              commentCount={wrapper.commentCount}
+              isSaved={wrapper.isSaved}
             />
           ))
         )}

@@ -19,6 +19,6 @@ export function EditCarForm({ car }: { car: any }) {
   }
 
   return (
-      <CarForm initialData={car} onSubmit={onSubmit} submitLabel="Update Car" />
+    <CarForm initialData={car} onSubmit={onSubmit} submitLabel="Update Car" />
   );
 }

@@ -8,16 +8,16 @@ export default async function EditCarPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
+
   // We handle the potential error from getCar or if it returns null/undefined
   // But getCar in my impl throws if unauthorized, or returns null if not found.
   let car;
   try {
-     car = await getCar(id);
+    car = await getCar(id);
   } catch (e) {
-     // If unauthorized, getCar throws.
-     // Might be better to let it throw or redirect to sign-in, but top level layout handles auth usually? 
-     // garage page handled it.
+    // If unauthorized, getCar throws.
+    // Might be better to let it throw or redirect to sign-in, but top level layout handles auth usually?
+    // garage page handled it.
   }
 
   if (!car) {

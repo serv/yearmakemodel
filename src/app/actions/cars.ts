@@ -73,7 +73,10 @@ export async function getCar(carId: string) {
   return car;
 }
 
-export async function updateCar(carId: string, data: z.infer<typeof carSchema>) {
+export async function updateCar(
+  carId: string,
+  data: z.infer<typeof carSchema>,
+) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -93,10 +96,7 @@ export async function updateCar(carId: string, data: z.infer<typeof carSchema>) 
     throw new Error("Car not found or unauthorized");
   }
 
-  await db
-    .update(cars)
-    .set(validData)
-    .where(eq(cars.id, carId));
+  await db.update(cars).set(validData).where(eq(cars.id, carId));
 
   revalidatePath("/garage");
 }

@@ -1,29 +1,37 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, postTags, tags, users, votes } from "@/lib/db/schema";
+import {
+  posts,
+  postTags,
+  tags,
+  users,
+  votes,
+  savedPosts,
+  hiddenPosts,
+  reports,
+  comments,
+} from "@/lib/db/schema";
 import { tagSchema, validateTags } from "@/lib/forum-rules";
-import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql, notExists } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export async function createPost(
-  data: {
-    title: string;
-    content: string;
-    tags: {
-      year?: string;
-      make?: string;
-      model?: string;
-      trim?: string;
-      drivetrain?: string;
-      transmission?: string;
-    };
-  },
-) {
+export async function createPost(data: {
+  title: string;
+  content: string;
+  tags: {
+    year?: string;
+    make?: string;
+    model?: string;
+    trim?: string;
+    drivetrain?: string;
+    transmission?: string;
+  };
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -31,7 +39,7 @@ export async function createPost(
   if (!session) {
     throw new Error("Unauthorized");
   }
-  
+
   const userId = session.user.id;
   validateTags(data.tags);
 
@@ -45,10 +53,6 @@ export async function createPost(
     .returning();
 
   // Handle Tags
-  // This is a simplified version. In reality, we might need to find IDs for existing tags or create new ones if allowed.
-  // Assuming tags must exist in DB for Year/Make/Model, or we find them by name.
-  // For this implementation, we'll try to find existing tags by name/type and link them.
-
   const tagNames = Object.values(data.tags).filter(Boolean) as string[];
 
   if (tagNames.length > 0) {
@@ -57,17 +61,17 @@ export async function createPost(
       .select()
       .from(tags)
       .where(inArray(tags.name, tagNames));
-    
-    const existingTagNames = new Set(existingTags.map(t => t.name));
-    
+
+    const existingTagNames = new Set(existingTags.map((t) => t.name));
+
     // 2. Identify missing tags
-    const tagsToCreate: { name: string; type: "year" | "make" | "model" | "trim" | "drivetrain" | "transmission" }[] = [];
-    
+    const tagsToCreate: {
+      name: string;
+      type: "year" | "make" | "model" | "trim" | "drivetrain" | "transmission";
+    }[] = [];
+
     Object.entries(data.tags).forEach(([key, value]) => {
       if (value && !existingTagNames.has(value)) {
-        // Warning: This assumes values are unique across types or we don't care about type mismatch for same name for now.
-        // Actually, schema has unique (name, type).
-        // If "2023" is year, it's fine.
         tagsToCreate.push({ name: value, type: key as any });
       }
     });
@@ -80,13 +84,13 @@ export async function createPost(
 
     // 4. Link all tags
     const allTags = [...existingTags, ...newTags];
-    
+
     if (allTags.length > 0) {
       await db.insert(postTags).values(
-        allTags.map(tag => ({
+        allTags.map((tag) => ({
           postId: post.id,
           tagId: tag.id,
-        }))
+        })),
       );
     }
   }
@@ -100,7 +104,6 @@ export async function getPosts(filters?: {
   year?: string[];
   model?: string[];
 }) {
-  // Basic implementation of filtering
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -135,18 +138,19 @@ export async function getPosts(filters?: {
   }
 
   let validPostIds: string[] | undefined;
-  
+
   if (conditions.length > 0) {
     // Intersect
     validPostIds = conditions.reduce((a, b) => a.filter((c) => b.includes(c)));
-    
+
     // If intersection is empty, return empty array immediately
     if (validPostIds.length === 0) {
-        return [];
+      return [];
     }
   }
 
   const userVotes = alias(votes, "user_votes");
+  const userSaved = alias(savedPosts, "user_saved");
 
   let query = db
     .select({
@@ -157,9 +161,20 @@ export async function getPosts(filters?: {
         SELECT ${userVotes.value} 
         FROM ${votes} as user_votes
         WHERE ${userVotes.postId} = ${posts.id} 
-        AND ${userVotes.userId} = ${currentUserId || '00000000-0000-0000-0000-000000000000'}
+        AND ${userVotes.userId} = ${currentUserId || "00000000-0000-0000-0000-000000000000"}
         LIMIT 1
       ), 0)`.mapWith(Number),
+      commentCount: sql<number>`(
+        SELECT count(*) 
+        FROM ${comments} 
+        WHERE ${comments.postId} = ${posts.id}
+      )`.mapWith(Number),
+      isSaved: sql<boolean>`CASE WHEN (
+        SELECT count(*) 
+        FROM ${savedPosts} as user_saved
+        WHERE ${userSaved.postId} = ${posts.id} 
+        AND ${userSaved.userId} = ${currentUserId || "00000000-0000-0000-0000-000000000000"}
+      ) > 0 THEN true ELSE false END`.mapWith(Boolean),
     })
     .from(posts)
     .leftJoin(users, eq(posts.userId, users.id))
@@ -171,5 +186,139 @@ export async function getPosts(filters?: {
     query.where(inArray(posts.id, validPostIds));
   }
 
+  // Filter hidden posts
+  if (currentUserId) {
+    // This approach is a bit manual because we're not using a subquery in WHERE directly in the initial select
+    // Or we could join hiddenPosts and filter where null
+    query.leftJoin(
+      hiddenPosts,
+      and(
+        eq(hiddenPosts.postId, posts.id),
+        eq(hiddenPosts.userId, currentUserId),
+      ),
+    );
+    // @ts-ignore - conflict with dynamic where
+    query.where(and(query.config.where, sql`${hiddenPosts.postId} IS NULL`));
+  }
+
   return await query;
+}
+
+export async function toggleSavePost(postId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const existing = await db.query.savedPosts.findFirst({
+    where: and(
+      eq(savedPosts.postId, postId),
+      eq(savedPosts.userId, session.user.id),
+    ),
+  });
+
+  if (existing) {
+    await db
+      .delete(savedPosts)
+      .where(
+        and(
+          eq(savedPosts.postId, postId),
+          eq(savedPosts.userId, session.user.id),
+        ),
+      );
+    revalidatePath("/");
+    return { saved: false };
+  } else {
+    await db.insert(savedPosts).values({
+      postId,
+      userId: session.user.id,
+    });
+    revalidatePath("/");
+    return { saved: true };
+  }
+}
+
+export async function hidePost(postId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if already hidden
+  const existing = await db.query.hiddenPosts.findFirst({
+    where: and(
+      eq(hiddenPosts.postId, postId),
+      eq(hiddenPosts.userId, session.user.id),
+    ),
+  });
+
+  if (!existing) {
+    await db.insert(hiddenPosts).values({
+      postId,
+      userId: session.user.id,
+    });
+    revalidatePath("/");
+  }
+}
+
+export async function reportPost(postId: string, reason: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  await db.insert(reports).values({
+    postId,
+    userId: session.user.id,
+    reason,
+  });
+}
+
+export async function deletePost(postId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, postId),
+  });
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  if (post.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Delete dependencies first if no cascade (Votes, Comments, PostTags)
+  // Assuming cascade is not set up on DB level for everything or handled by ORM, let's play safe.
+  // Actually, standard delete is fine if FKs are set to cascade.
+  // Let's assume we need to clean up manualy or rely on DB.
+  // For now, let's just try deleting the post. If it fails due to FK, we'll know.
+  // In `schema.ts`, no `onDelete: cascade` is specified, so we likely need to delete related data.
+
+  await db.delete(votes).where(eq(votes.postId, postId));
+  await db.delete(comments).where(eq(comments.postId, postId));
+  await db.delete(postTags).where(eq(postTags.postId, postId));
+  await db.delete(savedPosts).where(eq(savedPosts.postId, postId));
+  await db.delete(hiddenPosts).where(eq(hiddenPosts.postId, postId));
+  await db.delete(reports).where(eq(reports.postId, postId));
+
+  await db.delete(posts).where(eq(posts.id, postId));
+
+  revalidatePath("/");
 }

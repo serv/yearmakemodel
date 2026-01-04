@@ -241,3 +241,83 @@ export const carsRelations = relations(cars, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Saved Posts
+export const savedPosts = pgTable(
+  "saved_posts",
+  {
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    postId: uuid("post_id")
+      .references(() => posts.id)
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.postId] }),
+  }),
+);
+
+export const savedPostsRelations = relations(savedPosts, ({ one }) => ({
+  user: one(users, {
+    fields: [savedPosts.userId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [savedPosts.postId],
+    references: [posts.id],
+  }),
+}));
+
+// Hidden Posts
+export const hiddenPosts = pgTable(
+  "hidden_posts",
+  {
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    postId: uuid("post_id")
+      .references(() => posts.id)
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.postId] }),
+  }),
+);
+
+export const hiddenPostsRelations = relations(hiddenPosts, ({ one }) => ({
+  user: one(users, {
+    fields: [hiddenPosts.userId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [hiddenPosts.postId],
+    references: [posts.id],
+  }),
+}));
+
+// Reports
+export const reports = pgTable("reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .references(() => users.id)
+    .notNull(),
+  postId: uuid("post_id")
+    .references(() => posts.id)
+    .notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  user: one(users, {
+    fields: [reports.userId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [reports.postId],
+    references: [posts.id],
+  }),
+}));

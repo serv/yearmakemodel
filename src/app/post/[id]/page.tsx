@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import { posts, users, comments, votes, tags } from "@/lib/db/schema";
+import { posts, users, comments, votes, tags, savedPosts } from "@/lib/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { VoteButtons } from "@/components/forum/vote-buttons";
+import { PostActions } from "@/components/forum/post-actions";
 import { createComment } from "@/app/actions/comments";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,8 +47,11 @@ export default async function PostPage(props: {
     .from(votes)
     .where(eq(votes.postId, id));
 
+
   // 3. Fetch User Vote
   let userVoteValue = 0;
+  let isSaved = false;
+
   if (userId) {
     const userVote = await db.query.votes.findFirst({
       where: and(eq(votes.postId, id), eq(votes.userId, userId)),
@@ -55,6 +59,11 @@ export default async function PostPage(props: {
     if (userVote) {
       userVoteValue = userVote.value;
     }
+
+    const saved = await db.query.savedPosts.findFirst({
+      where: and(eq(savedPosts.postId, id), eq(savedPosts.userId, userId)),
+    });
+    isSaved = !!saved;
   }
 
   // 4. Fetch Comments
@@ -76,9 +85,18 @@ export default async function PostPage(props: {
     await createComment(currentUserId, id, content);
   }
 
+  const isAuthor = userId === post.userId;
+
   return (
     <div className="container mx-auto py-8 max-w-4xl px-4 sm:px-6">
-      <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 sm:p-8 mb-8">
+      <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 sm:p-8 mb-8 relative">
+        <PostActions
+            postId={id}
+            currentUserId={userId || ""}
+            isAuthor={isAuthor}
+            isSaved={isSaved}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6"
+        />
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Vote Buttons - Left side on desktop, top hidden on mobile (optional, but keep simple) */}
           <div className="hidden sm:flex flex-col items-center pt-1">
@@ -97,10 +115,14 @@ export default async function PostPage(props: {
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight lg:text-5xl">
                 {post.title}
               </h1>
-              
+
               <div className="flex flex-wrap gap-2">
                 {post.tags.map(({ tag }) => (
-                  <Badge key={tag.id} variant="secondary" className="px-3 py-1 text-sm font-medium">
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="px-3 py-1 text-sm font-medium"
+                  >
                     {tag.name}
                   </Badge>
                 ))}
@@ -108,12 +130,24 @@ export default async function PostPage(props: {
 
               <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={post.author.image || ""} alt={post.author.name} />
-                  <AvatarFallback>{post.author.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage
+                    src={post.author.image || ""}
+                    alt={post.author.name}
+                  />
+                  <AvatarFallback>
+                    {post.author.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col sm:flex-row sm:divide-x sm:divide-muted-foreground/30 sm:gap-2 text-xs sm:text-sm">
-                  <span className="font-medium text-foreground">{post.author.name}</span>
-                  <span className="sm:pl-2">Posted on {post.createdAt.toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                  <span className="font-medium text-foreground">
+                    {post.author.name}
+                  </span>
+                  <span className="sm:pl-2">
+                    Posted on{" "}
+                    {post.createdAt.toLocaleDateString(undefined, {
+                      dateStyle: "long",
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -122,20 +156,22 @@ export default async function PostPage(props: {
 
             {/* Content */}
             <div className="prose dark:prose-invert prose-lg max-w-none text-foreground/90 leading-relaxed">
-              {post.content.split('\n').map((line, i) => (
-                <p key={i} className="mb-4 last:mb-0">{line}</p>
+              {post.content.split("\n").map((line, i) => (
+                <p key={i} className="mb-4 last:mb-0">
+                  {line}
+                </p>
               ))}
             </div>
-            
+
             {/* Mobile Vote Buttons (visible only on small screens) */}
-             <div className="sm:hidden flex justify-start pt-4">
+            <div className="sm:hidden flex justify-start pt-4">
               <VoteButtons
-                  postId={id}
-                  initialScore={voteStats.score}
-                  initialUserVote={userVoteValue}
-                  userId={userId || ""}
-                  authorId={post.userId}
-                />
+                postId={id}
+                initialScore={voteStats.score}
+                initialUserVote={userVoteValue}
+                userId={userId || ""}
+                authorId={post.userId}
+              />
             </div>
           </div>
         </div>
@@ -144,25 +180,28 @@ export default async function PostPage(props: {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold tracking-tight">
-            {postComments.length} {postComments.length === 1 ? 'Comment' : 'Comments'}
+            {postComments.length}{" "}
+            {postComments.length === 1 ? "Comment" : "Comments"}
           </h3>
         </div>
 
         <div className="bg-muted/30 p-4 rounded-lg border">
           <form action={addComment} className="flex gap-4">
-             <Avatar className="h-8 w-8 hidden sm:block">
-                  <AvatarFallback>?</AvatarFallback>
-             </Avatar>
-             <div className="flex-1 space-y-3">
-                <textarea
-                  name="content"
-                  className="w-full min-h-[80px] p-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="What are your thoughts?"
-                />
-                <div className="flex justify-end">
-                   <Button type="submit" size="sm">Post Comment</Button>
-                </div>
-             </div>
+            <Avatar className="h-8 w-8 hidden sm:block">
+              <AvatarFallback>?</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 space-y-3">
+              <textarea
+                name="content"
+                className="w-full min-h-[80px] p-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="What are your thoughts?"
+              />
+              <div className="flex justify-end">
+                <Button type="submit" size="sm">
+                  Post Comment
+                </Button>
+              </div>
+            </div>
           </form>
         </div>
 

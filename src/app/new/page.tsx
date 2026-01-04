@@ -8,8 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPost } from "@/app/actions/posts";
 import { useRouter } from "next/navigation";
 
-
-
 export default function NewPostPage() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);

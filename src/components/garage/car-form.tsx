@@ -37,7 +37,7 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
 
-    const yearStr = formData.get("year"); 
+    const yearStr = formData.get("year");
 
     try {
       const data: CarData = {
@@ -49,7 +49,7 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
         drivetrain: (formData.get("drivetrain") as string) || undefined,
         transmission: (formData.get("transmission") as string) || undefined,
       };
-      
+
       await onSubmit(data);
     } catch (error) {
       console.error(error);
@@ -149,10 +149,7 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="transmission">Transmission</Label>
-          <Select
-            name="transmission"
-            defaultValue={initialData?.transmission}
-          >
+          <Select name="transmission" defaultValue={initialData?.transmission}>
             <SelectTrigger id="transmission">
               <SelectValue placeholder="Select Type" />
             </SelectTrigger>

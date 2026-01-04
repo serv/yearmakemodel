@@ -58,9 +58,13 @@ export function VoteButtons({
         onClick={() => handleVote(1)}
         disabled={isPending}
       >
-        <ArrowBigUp className={`w-6 h-6 ${optimisticState.userVote === 1 ? "fill-current" : ""}`} />
+        <ArrowBigUp
+          className={`w-6 h-6 ${optimisticState.userVote === 1 ? "fill-current" : ""}`}
+        />
       </Button>
-      <span className={`font-bold text-sm ${optimisticState.userVote === 1 ? "text-green-600 dark:text-green-400" : optimisticState.userVote === -1 ? "text-red-600 dark:text-red-400" : "text-foreground"}`}>
+      <span
+        className={`font-bold text-sm ${optimisticState.userVote === 1 ? "text-green-600 dark:text-green-400" : optimisticState.userVote === -1 ? "text-red-600 dark:text-red-400" : "text-foreground"}`}
+      >
         {optimisticState.score}
       </span>
       <Button
@@ -70,7 +74,9 @@ export function VoteButtons({
         onClick={() => handleVote(-1)}
         disabled={isPending}
       >
-        <ArrowBigDown className={`w-6 h-6 ${optimisticState.userVote === -1 ? "fill-current" : ""}`} />
+        <ArrowBigDown
+          className={`w-6 h-6 ${optimisticState.userVote === -1 ? "fill-current" : ""}`}
+        />
       </Button>
     </div>
   );
