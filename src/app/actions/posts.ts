@@ -322,3 +322,104 @@ export async function deletePost(postId: string) {
 
   revalidatePath("/");
 }
+
+export async function updatePost(
+  postId: string,
+  data: {
+    title: string;
+    content: string;
+    tags: {
+      year?: string;
+      make?: string;
+      model?: string;
+      trim?: string;
+      drivetrain?: string;
+      transmission?: string;
+    };
+  },
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  // Verify ownership
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, postId),
+  });
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  if (post.userId !== session.user.id) {
+    throw new Error("Unauthorized");
+  }
+
+  validateTags(data.tags);
+
+  await db
+    .update(posts)
+    .set({
+      title: data.title,
+      content: data.content,
+      updatedAt: new Date(),
+    })
+    .where(eq(posts.id, postId));
+
+  // Handle Tags - This is a bit complex as we need to sync
+  // Simplest strategy: Remove all tags for this post and re-add them.
+  // Less efficient but robust for now.
+
+  const tagNames = Object.values(data.tags).filter(Boolean) as string[];
+
+  // 0. Clear existing post tags
+  await db.delete(postTags).where(eq(postTags.postId, postId));
+
+  if (tagNames.length > 0) {
+    // 1. Get existing tags
+    const existingTags = await db
+      .select()
+      .from(tags)
+      .where(inArray(tags.name, tagNames));
+
+    const existingTagNames = new Set(existingTags.map((t) => t.name));
+
+    // 2. Identify missing tags
+    const tagsToCreate: {
+      name: string;
+      type: "year" | "make" | "model" | "trim" | "drivetrain" | "transmission";
+    }[] = [];
+
+    Object.entries(data.tags).forEach(([key, value]) => {
+      if (value && !existingTagNames.has(value)) {
+        tagsToCreate.push({ name: value, type: key as any });
+      }
+    });
+
+    // 3. Create missing tags
+    let newTags: typeof existingTags = [];
+    if (tagsToCreate.length > 0) {
+      newTags = await db.insert(tags).values(tagsToCreate).returning();
+    }
+
+    // 4. Link all tags
+    const allTags = [...existingTags, ...newTags];
+
+    if (allTags.length > 0) {
+      await db.insert(postTags).values(
+        allTags.map((tag) => ({
+          postId: postId,
+          tagId: tag.id,
+        })),
+      );
+    }
+  }
+
+  revalidatePath(`/post/${postId}`);
+  revalidatePath("/");
+  return { success: true };
+}

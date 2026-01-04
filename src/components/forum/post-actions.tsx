@@ -122,7 +122,7 @@ export function PostActions({
               {isAuthor && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push(`/post/${postId}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit
                   </DropdownMenuItem>
