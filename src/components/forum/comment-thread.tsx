@@ -10,7 +10,7 @@ type Comment = {
   id: string;
   content: string;
   createdAt: Date;
-  author: { name: string | null };
+  author: { name: string | null; username?: string | null };
   children?: Comment[]; // Populated by recursive build
   userId: string;
 };
@@ -40,7 +40,7 @@ export function CommentThread({
       <div className="bg-muted/10 p-4 rounded-lg">
         <div className="flex justify-between items-start mb-2">
           <span className="font-semibold text-sm">
-            {comment.author?.name || "Unknown"}
+            {comment.author?.username || comment.author?.name || "Unknown"}
           </span>
           <span className="text-xs text-muted-foreground">
             {new Date(comment.createdAt).toLocaleDateString()}

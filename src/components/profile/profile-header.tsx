@@ -5,25 +5,35 @@ interface ProfileHeaderProps {
   user: {
     id: string;
     name: string;
+    username: string | null;
     image: string | null;
     createdAt: Date;
     karma: number;
     emailVerified: boolean;
   };
+  isOwner?: boolean;
 }
 
-export function ProfileHeader({ user }: ProfileHeaderProps) {
+export function ProfileHeader({ user, isOwner = false }: ProfileHeaderProps) {
+  const displayName = user.username || user.name;
+  const initials = user.username 
+    ? user.username.slice(0, 2).toUpperCase() 
+    : user.name.slice(0, 2).toUpperCase();
+
   return (
     <div className="flex flex-col md:flex-row items-center md:items-start gap-6 p-6 bg-card rounded-lg border shadow-sm">
       <Avatar className="w-24 h-24 md:w-32 md:h-32 border-2 border-primary">
-        <AvatarImage src={user.image || ""} alt={user.name} />
+        <AvatarImage src={user.image || ""} alt={displayName} />
         <AvatarFallback className="text-4xl">
-          {user.name.slice(0, 2).toUpperCase()}
+          {initials}
         </AvatarFallback>
       </Avatar>
       
       <div className="flex-1 text-center md:text-left space-y-2">
-        <h1 className="text-3xl font-bold">{user.name}</h1>
+        <h1 className="text-3xl font-bold">{displayName}</h1>
+        {isOwner && user.username && (
+          <p className="text-sm text-muted-foreground">Full name: {user.name}</p>
+        )}
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-muted-foreground text-sm">
           <div className="flex items-center gap-1">
             <span className="font-semibold text-foreground">{user.karma}</span> Karma

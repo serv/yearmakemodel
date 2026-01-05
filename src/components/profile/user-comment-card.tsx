@@ -16,6 +16,7 @@ interface UserCommentCardProps {
   };
   author: {
     name: string;
+    username?: string | null;
   };
 }
 
@@ -25,7 +26,7 @@ export function UserCommentCard({ comment, post, author }: UserCommentCardProps)
       <CardHeader className="p-4 pb-2 space-y-1">
         <div className="text-xs text-muted-foreground flex items-center gap-1">
           <MessageSquare className="w-3 h-3" />
-          <span>{author.name} commented on</span>
+          <span>{author.username || author.name} commented on</span>
           <Link 
             href={`/post/${post.id}`} 
             className="font-medium text-foreground hover:underline truncate max-w-[300px]"

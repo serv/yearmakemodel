@@ -142,7 +142,7 @@ export default async function UserProfilePage({
 
   return (
     <div className="container max-w-4xl mx-auto py-8 space-y-8">
-      <ProfileHeader user={user} />
+      <ProfileHeader user={user} isOwner={isOwner} />
       
       <div className="space-y-6">
         <ProfileTabs userId={userId} isOwner={isOwner} />

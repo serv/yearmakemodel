@@ -66,7 +66,7 @@ export function PostCard({
         <CardHeader className="px-4 py-3 gap-1 pb-2">
           <div className="flex items-center gap-1 mb-1 text-xs text-muted-foreground">
             {/* Logic for tags can be improved later */}
-            <span className="font-semibold text-foreground">{author.name}</span>
+            <span className="font-semibold text-foreground">{author.username || author.name}</span>
             <span>•</span>
             <span>{new Date(post.createdAt).toLocaleDateString()}</span>
           </div>
