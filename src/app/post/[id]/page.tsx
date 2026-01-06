@@ -1,5 +1,15 @@
 import { db } from "@/lib/db";
-import { posts, users, comments, votes, tags, savedPosts, hiddenPosts } from "@/lib/db/schema";
+import {
+  posts,
+  users,
+  comments,
+  votes,
+  tags,
+  savedPosts,
+  hiddenPosts,
+  savedComments,
+  hiddenComments,
+} from "@/lib/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { VoteButtons } from "@/components/forum/vote-buttons";
@@ -72,16 +82,38 @@ export default async function PostPage(props: {
     isHidden = !!hidden;
   }
 
-  // 4. Fetch Comments
+  // 4. Fetch Comments with Scores and User Votes
   const postComments = await db
     .select({
       comment: comments,
       author: users,
+      score: sql<number>`COALESCE((SELECT SUM(${votes.value}) FROM ${votes} WHERE ${votes.commentId} = ${comments.id}), 0)`.mapWith(Number),
+      userVote: userId 
+        ? sql<number>`COALESCE((SELECT ${votes.value} FROM ${votes} WHERE ${votes.commentId} = ${comments.id} AND ${votes.userId} = ${userId}), 0)`.mapWith(Number)
+        : sql<number>`0`.mapWith(Number),
     })
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
     .where(eq(comments.postId, id))
     .orderBy(desc(comments.createdAt));
+
+  // 5. Fetch saved and hidden comments for current user
+  let savedCommentIds = new Set<string>();
+  let hiddenCommentIds = new Set<string>();
+
+  if (userId) {
+    const savedCommentsData = await db
+      .select({ commentId: savedComments.commentId })
+      .from(savedComments)
+      .where(eq(savedComments.userId, userId));
+    savedCommentIds = new Set(savedCommentsData.map((s) => s.commentId));
+
+    const hiddenCommentsData = await db
+      .select({ commentId: hiddenComments.commentId })
+      .from(hiddenComments)
+      .where(eq(hiddenComments.userId, userId));
+    hiddenCommentIds = new Set(hiddenCommentsData.map((h) => h.commentId));
+  }
 
   async function addComment(formData: FormData) {
     "use server";
@@ -214,7 +246,14 @@ export default async function PostPage(props: {
 
         <div className="space-y-6">
           {buildCommentTree(postComments).map((comment) => (
-            <CommentThread key={comment.id} comment={comment} postId={id} />
+            <CommentThread
+              key={comment.id}
+              comment={comment}
+              postId={id}
+              currentUserId={userId}
+              isSaved={savedCommentIds.has(comment.id)}
+              isHidden={hiddenCommentIds.has(comment.id)}
+            />
           ))}
         </div>
       </div>
@@ -233,6 +272,8 @@ function buildCommentTree(flatComments: any[]) {
     map.set(item.comment.id, {
       ...item.comment,
       author: item.author,
+      score: item.score,
+      userVote: item.userVote,
       children: [],
     });
   });

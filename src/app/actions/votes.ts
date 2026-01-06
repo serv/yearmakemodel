@@ -64,3 +64,60 @@ export async function votePost(
   revalidatePath(`/`);
   revalidatePath(`/post/${postId}`);
 }
+
+export async function voteComment(
+  commentId: string,
+  value: number,
+  authorId: string,
+  postId: string,
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized: User not found in session");
+  }
+
+  const userId = session.user.id;
+  if (value !== 1 && value !== -1) return;
+
+  try {
+    // Check existing vote
+    const existingVote = await db.query.votes.findFirst({
+      where: and(eq(votes.userId, userId), eq(votes.commentId, commentId)),
+    });
+
+    if (existingVote) {
+      if (existingVote.value === value) {
+        // Remove vote (toggle)
+        await db.delete(votes).where(eq(votes.id, existingVote.id));
+        await updateUserKarma(authorId, -value);
+      } else {
+        // Change vote
+        await db
+          .update(votes)
+          .set({ value })
+          .where(eq(votes.id, existingVote.id));
+        await updateUserKarma(authorId, value * 2); // Reverse previous and apply new
+      }
+    } else {
+      // New vote
+      await db.insert(votes).values({
+        userId,
+        commentId,
+        value,
+      });
+      await updateUserKarma(authorId, value);
+    }
+  } catch (error) {
+    console.error("Failed to vote on comment:", error);
+    throw new Error("Failed to vote on comment");
+  }
+
+  revalidatePath(`/post/${postId}`);
+}

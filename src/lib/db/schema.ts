@@ -116,6 +116,7 @@ export const comments = pgTable("comments", {
   parentId: uuid("parent_id"), // For nested comments
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -305,9 +306,8 @@ export const reports = pgTable("reports", {
   userId: text("user_id")
     .references(() => users.id)
     .notNull(),
-  postId: uuid("post_id")
-    .references(() => posts.id)
-    .notNull(),
+  postId: uuid("post_id").references(() => posts.id),
+  commentId: uuid("comment_id").references(() => comments.id),
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -320,5 +320,65 @@ export const reportsRelations = relations(reports, ({ one }) => ({
   post: one(posts, {
     fields: [reports.postId],
     references: [posts.id],
+  }),
+  comment: one(comments, {
+    fields: [reports.commentId],
+    references: [comments.id],
+  }),
+}));
+
+// Saved Comments
+export const savedComments = pgTable(
+  "saved_comments",
+  {
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    commentId: uuid("comment_id")
+      .references(() => comments.id)
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.commentId] }),
+  }),
+);
+
+export const savedCommentsRelations = relations(savedComments, ({ one }) => ({
+  user: one(users, {
+    fields: [savedComments.userId],
+    references: [users.id],
+  }),
+  comment: one(comments, {
+    fields: [savedComments.commentId],
+    references: [comments.id],
+  }),
+}));
+
+// Hidden Comments
+export const hiddenComments = pgTable(
+  "hidden_comments",
+  {
+    userId: text("user_id")
+      .references(() => users.id)
+      .notNull(),
+    commentId: uuid("comment_id")
+      .references(() => comments.id)
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.commentId] }),
+  }),
+);
+
+export const hiddenCommentsRelations = relations(hiddenComments, ({ one }) => ({
+  user: one(users, {
+    fields: [hiddenComments.userId],
+    references: [users.id],
+  }),
+  comment: one(comments, {
+    fields: [hiddenComments.commentId],
+    references: [comments.id],
   }),
 }));
