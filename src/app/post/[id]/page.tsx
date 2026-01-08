@@ -226,9 +226,7 @@ export default async function PostPage(props: {
 
         <div className="bg-muted/30 p-4 rounded-lg border">
           <form action={addComment} className="flex gap-4">
-            <Avatar className="h-8 w-8 hidden sm:block">
-              <AvatarFallback>?</AvatarFallback>
-            </Avatar>
+
             <div className="flex-1 space-y-3">
               <textarea
                 name="content"
