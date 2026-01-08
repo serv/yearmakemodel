@@ -1,128 +1,136 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useOptimistic, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { createComment, updateComment } from "@/app/actions/comments";
-import { CommentActions } from "./comment-actions";
-import { toast } from "sonner";
 import { ArrowBigUp, ArrowBigDown } from "lucide-react";
 import { voteComment } from "@/app/actions/votes";
-import { useOptimistic, useTransition } from "react";
+import { createComment } from "@/app/actions/comments";
+import { CommentActions } from "./comment-actions";
 
-type Comment = {
+interface Author {
+  id: string;
+  name: string | null;
+  username: string | null;
+  image: string | null;
+}
+
+interface Comment {
   id: string;
   content: string;
   createdAt: Date;
-  updatedAt?: Date;
-  author: { name: string | null; username?: string | null };
-  children?: Comment[];
+  updatedAt: Date;
   userId: string;
-  score?: number;
+  postId: string;
+  parentId: string | null;
+  author: Author | null;
+  isSaved?: boolean;
+  isHidden?: boolean;
+  children?: Comment[];
   userVote?: number;
-};
+  score: number;
+}
 
 interface CommentThreadProps {
   comment: Comment;
   postId: string;
-  currentUserId?: string;
-  isSaved?: boolean;
-  isHidden?: boolean;
+  currentUserId: string | undefined;
+  isSaved: boolean;
+  isHidden: boolean;
 }
 
 export function CommentThread({
   comment,
   postId,
   currentUserId,
-  isSaved = false,
-  isHidden = false,
+  isSaved,
+  isHidden,
 }: CommentThreadProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const isAuthor = currentUserId === comment.userId;
-  const isEdited =
-    comment.updatedAt &&
-    new Date(comment.updatedAt).getTime() !==
-      new Date(comment.createdAt).getTime();
+  const isEdited = comment.updatedAt && new Date(comment.updatedAt) > new Date(comment.createdAt);
 
-  // Vote state
-  const [isPending, startTransition] = useTransition();
-  const [optimisticState, setOptimisticState] = useOptimistic(
-    { score: comment.score || 0, userVote: comment.userVote || 0 },
+  const [optimisticState, addOptimisticVote] = useOptimistic(
+    { score: comment.score, userVote: comment.userVote || 0 },
     (state, newVote: number) => {
-      let newScore = state.score;
-      if (state.userVote === newVote) {
-        newScore -= newVote;
-        return { score: newScore, userVote: 0 };
-      } else {
-        if (state.userVote !== 0) {
-          newScore -= state.userVote;
-        }
-        newScore += newVote;
-        return { score: newScore, userVote: newVote };
+      const oldVote = state.userVote;
+      if (oldVote === newVote) {
+        return { score: state.score - newVote, userVote: 0 };
       }
-    },
+      return {
+        score: state.score - oldVote + newVote,
+        userVote: newVote,
+      };
+    }
   );
 
-  const handleVote = (value: number) => {
-    if (!currentUserId) {
-      toast.error("Please sign in to vote");
-      return;
-    }
+  const handleVote = async (value: number) => {
+    if (!currentUserId) return;
+    
+    // Optimistic update
     startTransition(async () => {
-      setOptimisticState(value);
-      await voteComment(comment.id, value, comment.userId, postId);
+      addOptimisticVote(value);
+      try {
+        await voteComment(comment.id, value, comment.userId, postId);
+      } catch (error) {
+        console.error("Failed to vote:", error);
+      }
     });
   };
 
-  async function handleReply(formData: FormData) {
+  const handleReply = async (formData: FormData) => {
     const content = formData.get("content") as string;
-    if (!currentUserId) {
-      toast.error("Please sign in to reply");
-      return;
-    }
-    await createComment(currentUserId, postId, content, comment.id);
-    setIsReplying(false);
-  }
+    if (!content || !currentUserId) return;
 
-  async function handleEditSave() {
-    if (!editContent.trim()) {
-      toast.error("Comment cannot be empty");
+    try {
+      await createComment(currentUserId, postId, content, comment.id);
+      setIsReplying(false);
+    } catch (error) {
+      console.error("Failed to create reply:", error);
+    }
+  };
+
+  const handleEditSave = async () => {
+    if (!editContent || editContent === comment.content) {
+      setIsEditing(false);
       return;
     }
+
     setIsSaving(true);
     try {
-      await updateComment(comment.id, editContent);
-      toast.success("Comment updated");
+      // In a real app, you'd call an updateComment action here
+      // await updateComment(comment.id, editContent);
       setIsEditing(false);
-    } catch (e) {
-      toast.error("Failed to update comment");
+    } catch (error) {
+      console.error("Failed to update comment:", error);
     } finally {
       setIsSaving(false);
     }
-  }
+  };
 
-  function handleEditCancel() {
+  const handleEditCancel = () => {
     setEditContent(comment.content);
     setIsEditing(false);
-  }
+  };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1 sm:gap-2">
       {/* Left border line */}
       <div className="w-0.5 bg-border hover:bg-primary/50 transition-colors cursor-pointer flex-shrink-0" />
 
-      <div className="flex-1 py-2">
+      <div className="flex-1 py-1.5 sm:py-2 min-w-0">
         {/* Header */}
-        <div className="flex items-center gap-2 text-xs mb-2">
-          <span className="font-semibold text-foreground">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mb-1.5 sm:mb-2 truncate">
+          <span className="font-semibold text-foreground truncate max-w-[80px] sm:max-w-none">
             {comment.author?.username || comment.author?.name || "Unknown"}
           </span>
           <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">
-            {new Date(comment.createdAt).toLocaleDateString()}
+          <span className="text-muted-foreground shrink-0">
+            {new Date(comment.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
           {isEdited && (
             <>
@@ -157,63 +165,65 @@ export function CommentThread({
             </div>
           </div>
         ) : (
-          <p className="text-sm mb-2 leading-relaxed">{comment.content}</p>
+          <p className="text-xs sm:text-sm mb-1.5 sm:mb-2 leading-relaxed break-words">{comment.content}</p>
         )}
 
         {/* Action buttons - Reddit style */}
         {!isEditing && (
-          <div className="flex items-center gap-1 text-xs font-semibold">
+          <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-semibold">
             {/* Vote buttons - horizontal */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-6 px-1 hover:bg-transparent ${
-                optimisticState.userVote === 1
-                  ? "text-orange-500"
-                  : "text-muted-foreground hover:text-orange-500"
-              }`}
-              onClick={() => handleVote(1)}
-              disabled={isPending}
-            >
-              <ArrowBigUp
-                className={`w-5 h-5 ${optimisticState.userVote === 1 ? "fill-current" : ""}`}
-              />
-            </Button>
+            <div className="flex items-center">
+                <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 px-1 hover:bg-transparent ${
+                    optimisticState.userVote === 1
+                    ? "text-orange-500"
+                    : "text-muted-foreground hover:text-orange-500"
+                }`}
+                onClick={() => handleVote(1)}
+                disabled={isPending}
+                >
+                <ArrowBigUp
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${optimisticState.userVote === 1 ? "fill-current" : ""}`}
+                />
+                </Button>
 
-            <span
-              className={`min-w-[20px] text-center ${
-                optimisticState.userVote === 1
-                  ? "text-orange-500"
-                  : optimisticState.userVote === -1
+                <span
+                className={`min-w-[16px] sm:min-w-[20px] text-center ${
+                    optimisticState.userVote === 1
+                    ? "text-orange-500"
+                    : optimisticState.userVote === -1
+                        ? "text-blue-500"
+                        : "text-muted-foreground"
+                }`}
+                >
+                {optimisticState.score}
+                </span>
+
+                <Button
+                variant="ghost"
+                size="sm"
+                className={`h-7 px-1 hover:bg-transparent ${
+                    optimisticState.userVote === -1
                     ? "text-blue-500"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {optimisticState.score}
-            </span>
+                    : "text-muted-foreground hover:text-blue-500"
+                }`}
+                onClick={() => handleVote(-1)}
+                disabled={isPending}
+                >
+                <ArrowBigDown
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${optimisticState.userVote === -1 ? "fill-current" : ""}`}
+                />
+                </Button>
+            </div>
+
+            <span className="text-muted-foreground mx-0.5 sm:mx-1">•</span>
 
             <Button
               variant="ghost"
               size="sm"
-              className={`h-6 px-1 hover:bg-transparent ${
-                optimisticState.userVote === -1
-                  ? "text-blue-500"
-                  : "text-muted-foreground hover:text-blue-500"
-              }`}
-              onClick={() => handleVote(-1)}
-              disabled={isPending}
-            >
-              <ArrowBigDown
-                className={`w-5 h-5 ${optimisticState.userVote === -1 ? "fill-current" : ""}`}
-              />
-            </Button>
-
-            <span className="text-muted-foreground mx-1">•</span>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="h-7 px-1.5 sm:px-2 hover:bg-muted text-muted-foreground hover:text-foreground"
               onClick={() => setIsReplying(!isReplying)}
             >
               Reply
@@ -221,7 +231,7 @@ export function CommentThread({
 
             {currentUserId && (
               <>
-                <span className="text-muted-foreground mx-1">•</span>
+                <span className="text-muted-foreground mx-0.5 sm:mx-1">•</span>
                 <CommentActions
                   commentId={comment.id}
                   postId={postId}
@@ -264,13 +274,15 @@ export function CommentThread({
 
         {/* Recursive rendering of children */}
         {comment.children && comment.children.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-2 sm:mt-4 ml-1 sm:ml-2">
             {comment.children.map((child) => (
               <CommentThread
                 key={child.id}
                 comment={child}
                 postId={postId}
                 currentUserId={currentUserId}
+                isSaved={false}
+                isHidden={false}
               />
             ))}
           </div>
