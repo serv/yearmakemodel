@@ -12,26 +12,44 @@ import {
   reports,
   comments,
 } from "@/lib/db/schema";
-import { tagSchema, validateTags } from "@/lib/forum-rules";
+import { tagSchema } from "@/lib/forum-rules";
 import { and, desc, eq, inArray, like, sql, notExists } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const createPostSchema = z.object({
+  title: z.string().min(1, "Title is required").max(300),
+  content: z.string().min(1, "Content is required"),
+  tags: tagSchema,
+});
+
+const updatePostSchema = z.object({
+  title: z.string().min(1, "Title is required").max(300),
+  content: z.string().min(1, "Content is required"),
+  tags: tagSchema,
+});
+
+const getPostsFiltersSchema = z
+  .object({
+    make: z.array(z.string()).optional(),
+    year: z.array(z.string()).optional(),
+    model: z.array(z.string()).optional(),
+  })
+  .optional();
+
+const postIdSchema = z.string().uuid();
+
+const reportPostSchema = z.object({
+  postId: postIdSchema,
+  reason: z.string().min(1, "Reason is required").max(1000),
+});
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export async function createPost(data: {
-  title: string;
-  content: string;
-  tags: {
-    year?: string;
-    make?: string;
-    model?: string;
-    trim?: string;
-    drivetrain?: string;
-    transmission?: string;
-  };
-}) {
+export async function createPost(input: z.infer<typeof createPostSchema>) {
+  const data = createPostSchema.parse(input);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -41,7 +59,6 @@ export async function createPost(data: {
   }
 
   const userId = session.user.id;
-  validateTags(data.tags);
 
   const [post] = await db
     .insert(posts)
@@ -99,11 +116,8 @@ export async function createPost(data: {
   return post;
 }
 
-export async function getPosts(filters?: {
-  make?: string[];
-  year?: string[];
-  model?: string[];
-}) {
+export async function getPosts(filtersInput?: z.infer<typeof getPostsFiltersSchema>) {
+  const filters = getPostsFiltersSchema.parse(filtersInput);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -219,6 +233,7 @@ export async function getPosts(filters?: {
 }
 
 export async function toggleSavePost(postId: string) {
+  postIdSchema.parse(postId);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -256,6 +271,7 @@ export async function toggleSavePost(postId: string) {
 }
 
 export async function hidePost(postId: string) {
+  postIdSchema.parse(postId);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -282,6 +298,7 @@ export async function hidePost(postId: string) {
 }
 
 export async function unhidePost(postId: string) {
+  postIdSchema.parse(postId);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -302,6 +319,7 @@ export async function unhidePost(postId: string) {
 }
 
 export async function reportPost(postId: string, reason: string) {
+  reportPostSchema.parse({ postId, reason });
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -318,6 +336,7 @@ export async function reportPost(postId: string, reason: string) {
 }
 
 export async function deletePost(postId: string) {
+  postIdSchema.parse(postId);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -359,19 +378,10 @@ export async function deletePost(postId: string) {
 
 export async function updatePost(
   postId: string,
-  data: {
-    title: string;
-    content: string;
-    tags: {
-      year?: string;
-      make?: string;
-      model?: string;
-      trim?: string;
-      drivetrain?: string;
-      transmission?: string;
-    };
-  },
+  input: z.infer<typeof updatePostSchema>,
 ) {
+  postIdSchema.parse(postId);
+  const data = updatePostSchema.parse(input);
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -393,7 +403,6 @@ export async function updatePost(
     throw new Error("Unauthorized");
   }
 
-  validateTags(data.tags);
 
   await db
     .update(posts)
