@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useOptimistic, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowBigUp, ArrowBigDown } from "lucide-react";
 import { voteComment } from "@/app/actions/votes";
 import { createComment } from "@/app/actions/comments";
 import { CommentActions } from "./comment-actions";
+import { VoteButtons } from "./vote-buttons";
+import { cn } from "@/lib/utils";
 
 interface Author {
   id: string;
@@ -53,34 +55,6 @@ export function CommentThread({
 
   const isAuthor = currentUserId === comment.userId;
   const isEdited = comment.updatedAt && new Date(comment.updatedAt) > new Date(comment.createdAt);
-
-  const [optimisticState, addOptimisticVote] = useOptimistic(
-    { score: comment.score, userVote: comment.userVote || 0 },
-    (state, newVote: number) => {
-      const oldVote = state.userVote;
-      if (oldVote === newVote) {
-        return { score: state.score - newVote, userVote: 0 };
-      }
-      return {
-        score: state.score - oldVote + newVote,
-        userVote: newVote,
-      };
-    }
-  );
-
-  const handleVote = async (value: number) => {
-    if (!currentUserId) return;
-    
-    // Optimistic update
-    startTransition(async () => {
-      addOptimisticVote(value);
-      try {
-        await voteComment(comment.id, value, comment.userId, postId);
-      } catch (error) {
-        console.error("Failed to vote:", error);
-      }
-    });
-  };
 
   const handleReply = async (formData: FormData) => {
     const content = formData.get("content") as string;
@@ -172,51 +146,15 @@ export function CommentThread({
         {!isEditing && (
           <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-semibold">
             {/* Vote buttons - horizontal */}
-            <div className="flex items-center">
-                <Button
-                variant="ghost"
-                size="sm"
-                className={`h-7 px-1 hover:bg-transparent ${
-                    optimisticState.userVote === 1
-                    ? "text-orange-500"
-                    : "text-muted-foreground hover:text-orange-500"
-                }`}
-                onClick={() => handleVote(1)}
-                disabled={isPending}
-                >
-                <ArrowBigUp
-                    className={`w-4 h-4 sm:w-5 sm:h-5 ${optimisticState.userVote === 1 ? "fill-current" : ""}`}
-                />
-                </Button>
-
-                <span
-                className={`min-w-[16px] sm:min-w-[20px] text-center ${
-                    optimisticState.userVote === 1
-                    ? "text-orange-500"
-                    : optimisticState.userVote === -1
-                        ? "text-blue-500"
-                        : "text-muted-foreground"
-                }`}
-                >
-                {optimisticState.score}
-                </span>
-
-                <Button
-                variant="ghost"
-                size="sm"
-                className={`h-7 px-1 hover:bg-transparent ${
-                    optimisticState.userVote === -1
-                    ? "text-blue-500"
-                    : "text-muted-foreground hover:text-blue-500"
-                }`}
-                onClick={() => handleVote(-1)}
-                disabled={isPending}
-                >
-                <ArrowBigDown
-                    className={`w-4 h-4 sm:w-5 sm:h-5 ${optimisticState.userVote === -1 ? "fill-current" : ""}`}
-                />
-                </Button>
-            </div>
+            <VoteButtons
+              postId={postId}
+              commentId={comment.id}
+              initialScore={comment.score}
+              initialUserVote={comment.userVote}
+              userId={currentUserId || ""}
+              authorId={comment.userId}
+              variant="horizontal"
+            />
 
             <span className="text-muted-foreground mx-0.5 sm:mx-1">•</span>
 
@@ -274,7 +212,7 @@ export function CommentThread({
 
         {/* Recursive rendering of children */}
         {comment.children && comment.children.length > 0 && (
-          <div className="mt-2 sm:mt-4 ml-1 sm:ml-2">
+          <div className="mt-2 sm:mt-4 ml-1 sm:ml-2 border-l pl-2 sm:pl-4">
             {comment.children.map((child) => (
               <CommentThread
                 key={child.id}
