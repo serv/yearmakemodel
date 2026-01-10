@@ -4,7 +4,6 @@ import { db } from "./db";
 import * as schema from "./db/schema";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
-import redis from "./redis";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -17,19 +16,6 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  secondaryStorage: {
-    get: async (key) => {
-      const value = await redis.get(key);
-      return value ? value : null;
-    },
-    set: async (key, value, ttl) => {
-      if (ttl) await redis.set(key, value, { EX: ttl });
-      else await redis.set(key, value);
-    },
-    delete: async (key) => {
-      await redis.del(key);
-    },
-  },
   emailAndPassword: {
     enabled: true,
   },
