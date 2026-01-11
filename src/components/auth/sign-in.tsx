@@ -1,45 +1,39 @@
-"use client";
+'use client';
 
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useState } from "react";
-import { toast } from "sonner";
+import { authClient } from '@/lib/auth-client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
+      provider: 'google',
+      callbackURL: '/',
     });
   };
 
   const handleMagicLink = async () => {
     if (!email) {
-      toast.error("Please enter your email");
+      toast.error('Please enter your email');
       return;
     }
     setLoading(true);
     const { data, error } = await authClient.signIn.magicLink({
       email,
-      callbackURL: "/dashboard",
+      callbackURL: '/',
     });
     setLoading(false);
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Magic link sent! Check your email.");
+      toast.success('Magic link sent! Check your email.');
     }
   };
 
@@ -58,9 +52,7 @@ export default function SignIn() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
           </div>
         </div>
         <div className="space-y-2">
@@ -74,7 +66,7 @@ export default function SignIn() {
           />
         </div>
         <Button className="w-full" onClick={handleMagicLink} disabled={loading}>
-          {loading ? "Sending..." : "Send Magic Link"}
+          {loading ? 'Sending...' : 'Send Magic Link'}
         </Button>
       </CardContent>
     </Card>
