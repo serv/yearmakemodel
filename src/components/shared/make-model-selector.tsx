@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { getCarMakeIcon } from "@/lib/car-make-icons";
 
 interface MakeModelSelectorProps {
   // Values
@@ -86,8 +87,19 @@ export function MakeModelSelector({
     }
   };
 
+  // Get and sort available makes
+  const sortedMakes = [...makes].sort((a, b) => a.localeCompare(b));
+
   // Determine if model select should be disabled
   const isModelDisabled = !makeValue || (makeValue === "all" && !isFilterMode);
+
+  // Get and sort available models
+  const sortedModels = [...availableModels].sort((a, b) => a.localeCompare(b));
+  
+  // Deduplicate models if we're showing all of them
+  const displayModels = (makeValue === "all" && isFilterMode) 
+    ? Array.from(new Set(sortedModels))
+    : sortedModels;
 
   // Container class based on layout
   const containerClass =
@@ -113,11 +125,22 @@ export function MakeModelSelector({
           </SelectTrigger>
           <SelectContent>
             {isFilterMode && <SelectItem value="all">All Makes</SelectItem>}
-            {makes.map((make) => (
-              <SelectItem key={make} value={make}>
-                {make}
-              </SelectItem>
-            ))}
+            {sortedMakes.map((make) => {
+              const MakeIcon = getCarMakeIcon(make);
+              return (
+                <SelectItem key={make} value={make}>
+                  <div className="flex items-center gap-2">
+                    {MakeIcon && (
+                      <MakeIcon
+                        className="h-5 w-5 flex-shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span>{make}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -145,7 +168,7 @@ export function MakeModelSelector({
           </SelectTrigger>
           <SelectContent>
             {isFilterMode && <SelectItem value="all">All Models</SelectItem>}
-            {availableModels.map((model) => (
+            {displayModels.map((model) => (
               <SelectItem key={model} value={model}>
                 {model}
               </SelectItem>
