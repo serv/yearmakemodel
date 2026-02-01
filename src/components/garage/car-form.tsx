@@ -14,6 +14,7 @@ import {
 import { MAKES, MODELS } from "@/lib/constants";
 import { carSchema } from "@/lib/validations";
 import { z } from "zod";
+import { MakeModelSelector } from "@/components/shared/make-model-selector";
 
 type CarData = z.infer<typeof carSchema>;
 
@@ -28,10 +29,6 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
   const [selectedMake, setSelectedMake] = useState(initialData?.make || "");
   const [selectedModel, setSelectedModel] = useState(initialData?.model || "");
 
-  const availableModels = selectedMake
-    ? MODELS[selectedMake as keyof typeof MODELS] || []
-    : [];
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsPending(true);
@@ -42,8 +39,8 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
     try {
       const data: CarData = {
         year: yearStr ? parseInt(yearStr as string) : new Date().getFullYear(),
-        make: formData.get("make") as string,
-        model: formData.get("model") as string,
+        make: selectedMake,
+        model: selectedModel,
         trim: (formData.get("trim") as string) || undefined,
         color: (formData.get("color") as string) || undefined,
         drivetrain: (formData.get("drivetrain") as string) || undefined,
@@ -58,11 +55,6 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
       setIsPending(false);
     }
   }
-
-  const handleMakeChange = (value: string) => {
-    setSelectedMake(value);
-    setSelectedModel("");
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 border p-6 rounded-lg">
@@ -80,51 +72,19 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
             defaultValue={initialData?.year}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="make">Make *</Label>
-          <Select
-            name="make"
-            value={selectedMake}
-            onValueChange={handleMakeChange}
-            required
-          >
-            <SelectTrigger id="make">
-              <SelectValue placeholder="Select Make" />
-            </SelectTrigger>
-            <SelectContent>
-              {MAKES.map((make) => (
-                <SelectItem key={make} value={make}>
-                  {make}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="model">Model *</Label>
-        <Select
-          name="model"
-          value={selectedModel}
-          onValueChange={setSelectedModel}
-          disabled={!selectedMake}
-          required
-        >
-          <SelectTrigger id="model">
-            <SelectValue
-              placeholder={selectedMake ? "Select Model" : "Select Make First"}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {availableModels.map((model) => (
-              <SelectItem key={model} value={model}>
-                {model}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <MakeModelSelector
+        makeValue={selectedMake}
+        modelValue={selectedModel}
+        onMakeChange={setSelectedMake}
+        onModelChange={setSelectedModel}
+        makes={MAKES}
+        makeModelMap={MODELS}
+        mode="strict"
+        required
+        layout="horizontal"
+      />
 
       <div className="space-y-2">
         <Label htmlFor="trim">Trim</Label>
