@@ -87,8 +87,19 @@ export function MakeModelSelector({
     }
   };
 
+  // Get and sort available makes
+  const sortedMakes = [...makes].sort((a, b) => a.localeCompare(b));
+
   // Determine if model select should be disabled
   const isModelDisabled = !makeValue || (makeValue === "all" && !isFilterMode);
+
+  // Get and sort available models
+  const sortedModels = [...availableModels].sort((a, b) => a.localeCompare(b));
+  
+  // Deduplicate models if we're showing all of them
+  const displayModels = (makeValue === "all" && isFilterMode) 
+    ? Array.from(new Set(sortedModels))
+    : sortedModels;
 
   // Container class based on layout
   const containerClass =
@@ -114,7 +125,7 @@ export function MakeModelSelector({
           </SelectTrigger>
           <SelectContent>
             {isFilterMode && <SelectItem value="all">All Makes</SelectItem>}
-            {makes.map((make) => {
+            {sortedMakes.map((make) => {
               const MakeIcon = getCarMakeIcon(make);
               return (
                 <SelectItem key={make} value={make}>
@@ -157,7 +168,7 @@ export function MakeModelSelector({
           </SelectTrigger>
           <SelectContent>
             {isFilterMode && <SelectItem value="all">All Models</SelectItem>}
-            {availableModels.map((model) => (
+            {displayModels.map((model) => (
               <SelectItem key={model} value={model}>
                 {model}
               </SelectItem>
