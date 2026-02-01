@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { getCarMakeIcon } from "@/lib/car-make-icons";
 
 interface MakeModelSelectorProps {
   // Values
@@ -113,11 +114,22 @@ export function MakeModelSelector({
           </SelectTrigger>
           <SelectContent>
             {isFilterMode && <SelectItem value="all">All Makes</SelectItem>}
-            {makes.map((make) => (
-              <SelectItem key={make} value={make}>
-                {make}
-              </SelectItem>
-            ))}
+            {makes.map((make) => {
+              const MakeIcon = getCarMakeIcon(make);
+              return (
+                <SelectItem key={make} value={make}>
+                  <div className="flex items-center gap-2">
+                    {MakeIcon && (
+                      <MakeIcon
+                        className="h-5 w-5 flex-shrink-0"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span>{make}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
