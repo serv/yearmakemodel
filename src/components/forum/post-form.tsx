@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
+import { MakeModelSelector } from "@/components/shared/make-model-selector";
+import { MAKES, MODELS } from "@/lib/constants";
 
 interface PostFormProps {
   initialData?: {
@@ -32,6 +34,8 @@ interface PostFormProps {
 export function PostForm({ initialData, onSubmit, isEditing = false }: PostFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [make, setMake] = useState(initialData?.tags?.make || "");
+  const [model, setModel] = useState(initialData?.tags?.model || "");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,8 +48,8 @@ export function PostForm({ initialData, onSubmit, isEditing = false }: PostFormP
         content: formData.get("content") as string,
         tags: {
           year: (formData.get("year") as string) || undefined,
-          make: (formData.get("make") as string) || undefined,
-          model: (formData.get("model") as string) || undefined,
+          make: make || undefined,
+          model: model || undefined,
         },
       });
     } catch (error) {
@@ -83,25 +87,18 @@ export function PostForm({ initialData, onSubmit, isEditing = false }: PostFormP
                 defaultValue={initialData?.tags?.year}
             />
             </div>
-            <div className="space-y-2">
-            <Label htmlFor="make">Make</Label>
-            <Input 
-                id="make" 
-                name="make" 
-                placeholder="Toyota" 
-                defaultValue={initialData?.tags?.make}
-            />
-            </div>
-            <div className="space-y-2">
-            <Label htmlFor="model">Model</Label>
-            <Input 
-                id="model" 
-                name="model" 
-                placeholder="Camry" 
-                defaultValue={initialData?.tags?.model}
-            />
-            </div>
         </div>
+
+        <MakeModelSelector
+          makeValue={make}
+          modelValue={model}
+          onMakeChange={setMake}
+          onModelChange={setModel}
+          makes={MAKES}
+          makeModelMap={MODELS}
+          mode="strict"
+          layout="horizontal"
+        />
         <p className="text-xs text-muted-foreground">
             Note: If you provide Year and Model, Make is required.
         </p>

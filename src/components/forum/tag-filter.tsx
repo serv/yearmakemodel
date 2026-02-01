@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { MakeModelSelector } from "@/components/shared/make-model-selector";
 
 interface TagFilterProps {
   availableYears: string[];
@@ -32,12 +33,6 @@ export function TagFilter({
   const [make, setMake] = useState(searchParams.get("make") || "");
   const [model, setModel] = useState(searchParams.get("model") || "");
 
-  // Derived models based on selected make
-  const filteredModels =
-    make && make !== "all" && makeModelMap[make]
-      ? makeModelMap[make]
-      : availableModels;
-
   // Update state when URL changes
   useEffect(() => {
     setYear(searchParams.get("year") || "");
@@ -53,24 +48,6 @@ export function TagFilter({
 
     router.push(`/?${params.toString()}`);
   }, [year, make, model, router]);
-
-  const handleMakeChange = (val: string) => {
-    setMake(val);
-    // Reset model when make changes if the current model doesn't belong to the new make
-    if (
-      val !== "all" &&
-      model &&
-      makeModelMap[val] &&
-      !makeModelMap[val].includes(model)
-    ) {
-      setModel("");
-    } else if (val === "all") {
-      // Keep model if 'all' is selected (shows all models), or maybe reset?
-      // Usually clearing make allows any model, but if a specific model was selected, it's still valid in the global list.
-      // However, for better UX, we might want to keep it or let user decide.
-      // Let's keep it for now unless it conflicts logic, but since we show availableModels (all) when make is all, it's fine.
-    }
-  };
 
   return (
     <div className="p-4 space-y-4 border rounded-lg">
@@ -98,47 +75,16 @@ export function TagFilter({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label>Make</Label>
-        <Select value={make} onValueChange={handleMakeChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select Make" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Makes</SelectItem>
-            {availableMakes.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Model</Label>
-        <Select
-          value={model}
-          onValueChange={(val) => {
-            setModel(val);
-          }}
-          // Model selection is always enabled now.
-          // If a make is selected, the list is filtered.
-          // If no make is selected, the list contains all models.
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select Model" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Models</SelectItem>
-            {filteredModels.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <MakeModelSelector
+        makeValue={make}
+        modelValue={model}
+        onMakeChange={setMake}
+        onModelChange={setModel}
+        makes={availableMakes}
+        makeModelMap={makeModelMap}
+        mode="filter"
+        layout="vertical"
+      />
 
       <Button onClick={updateFilters} className="w-full">
         Apply Filters
