@@ -1,20 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from 'react';
+import type { z } from 'zod';
+import { MakeModelSelector } from '@/components/shared/make-model-selector';
+import { YearSelector } from '@/components/shared/year-selector';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { MAKES, MODELS } from "@/lib/constants";
-import { carSchema } from "@/lib/validations";
-import { z } from "zod";
-import { MakeModelSelector } from "@/components/shared/make-model-selector";
+} from '@/components/ui/select';
+import { MAKES, MODELS } from '@/lib/constants';
+import type { carSchema } from '@/lib/validations';
 
 type CarData = z.infer<typeof carSchema>;
 
@@ -26,31 +27,30 @@ interface CarFormProps {
 
 export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
   const [isPending, setIsPending] = useState(false);
-  const [selectedMake, setSelectedMake] = useState(initialData?.make || "");
-  const [selectedModel, setSelectedModel] = useState(initialData?.model || "");
+  const [selectedMake, setSelectedMake] = useState(initialData?.make || '');
+  const [selectedModel, setSelectedModel] = useState(initialData?.model || '');
+  const [selectedYear, setSelectedYear] = useState(initialData?.year?.toString() || '');
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
 
-    const yearStr = formData.get("year");
-
     try {
       const data: CarData = {
-        year: yearStr ? parseInt(yearStr as string) : new Date().getFullYear(),
+        year: selectedYear ? parseInt(selectedYear, 10) : new Date().getFullYear(),
         make: selectedMake,
         model: selectedModel,
-        trim: (formData.get("trim") as string) || undefined,
-        color: (formData.get("color") as string) || undefined,
-        drivetrain: (formData.get("drivetrain") as string) || undefined,
-        transmission: (formData.get("transmission") as string) || undefined,
+        trim: (formData.get('trim') as string) || undefined,
+        color: (formData.get('color') as string) || undefined,
+        drivetrain: (formData.get('drivetrain') as string) || undefined,
+        transmission: (formData.get('transmission') as string) || undefined,
       };
 
       await onSubmit(data);
     } catch (error) {
       console.error(error);
-      alert("Failed to save car");
+      alert('Failed to save car');
     } finally {
       setIsPending(false);
     }
@@ -60,16 +60,11 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4 border p-6 rounded-lg">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="year">Year *</Label>
-          <Input
-            id="year"
-            name="year"
-            type="number"
-            min="1900"
-            max="2026"
+          <YearSelector
+            value={selectedYear}
+            onValueChange={setSelectedYear}
             required
-            placeholder="2023"
-            defaultValue={initialData?.year}
+            label="Year"
           />
         </div>
       </div>
@@ -88,12 +83,7 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="trim">Trim</Label>
-        <Input
-          id="trim"
-          name="trim"
-          placeholder="LE, XSE, etc."
-          defaultValue={initialData?.trim}
-        />
+        <Input id="trim" name="trim" placeholder="LE, XSE, etc." defaultValue={initialData?.trim} />
       </div>
 
       <div className="space-y-2">
@@ -137,7 +127,7 @@ export function CarForm({ initialData, onSubmit, submitLabel }: CarFormProps) {
 
       <div className="pt-4">
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? "Saving..." : submitLabel}
+          {isPending ? 'Saving...' : submitLabel}
         </Button>
       </div>
     </form>
