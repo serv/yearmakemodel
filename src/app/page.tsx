@@ -101,10 +101,7 @@ export default async function Home({
         </div>
 
         {/* Desktop Title */}
-        <h1 className="hidden md:block text-2xl font-bold mb-2">
-          Viewing: {year || "Any Year"} {make || "Any Make"}{" "}
-          {model || "Any Model"}
-        </h1>
+
 
         <div className="grid gap-4">
           {posts.length === 0 ? (
