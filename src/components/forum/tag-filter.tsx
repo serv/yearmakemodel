@@ -2,16 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { MakeModelSelector } from "@/components/shared/make-model-selector";
+import { YearSelector } from "@/components/shared/year-selector";
+import { Button } from "@/components/ui/button";
 
 interface TagFilterProps {
   availableYears: string[];
@@ -54,25 +47,12 @@ export function TagFilter({
       <h3 className="font-semibold mb-2">Filters</h3>
 
       <div className="space-y-2">
-        <Label>Year</Label>
-        <Select
+        <YearSelector
           value={year}
-          onValueChange={(val) => {
-            setYear(val);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select Year" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
-            {availableYears.map((y) => (
-              <SelectItem key={y} value={y}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={setYear}
+          years={availableYears}
+          mode="filter"
+        />
       </div>
 
       <MakeModelSelector
