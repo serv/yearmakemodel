@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { END_YEAR, START_YEAR } from "@/lib/constants";
 
 interface YearSelectorProps {
   value: string | number | undefined;
@@ -25,8 +26,8 @@ interface YearSelectorProps {
 export function YearSelector({
   value,
   onValueChange,
-  startYear = 1900,
-  endYear = new Date().getFullYear() + 1,
+  startYear = START_YEAR,
+  endYear = END_YEAR,
   mode = "strict",
   label = "Year",
   placeholder = "Select Year",

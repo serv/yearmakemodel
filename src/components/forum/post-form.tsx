@@ -88,7 +88,7 @@ export function PostForm({
           <YearSelector
             value={year}
             onValueChange={setYear}
-            placeholder="2023"
+            placeholder={new Date().getFullYear().toString()}
           />
         </div>
       </div>
