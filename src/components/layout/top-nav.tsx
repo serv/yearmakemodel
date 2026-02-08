@@ -57,7 +57,7 @@ export function TopNav({
     <div className="w-full h-14 border-b bg-background flex items-center px-4 justify-between sticky top-0 z-50">
       <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
         <Link href="/" className="font-bold text-base sm:text-lg flex-shrink-0">
-          yearmnm
+          carmnm
         </Link>
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth">
           <Filter
