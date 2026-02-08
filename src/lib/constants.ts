@@ -34,8 +34,12 @@ export const MAKES = [
   "Volvo",
 ];
 
-export const YEARS = Array.from({ length: 30 }, (_, i) =>
-  (2025 - i).toString(),
+export const START_YEAR = 1900;
+export const END_YEAR = new Date().getFullYear() + 1;
+
+export const YEARS = Array.from(
+  { length: END_YEAR - START_YEAR + 1 },
+  (_, i) => (END_YEAR - i).toString(),
 );
 
 export const MODELS: Record<string, string[]> = {
