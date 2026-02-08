@@ -42,7 +42,7 @@ export default function SignIn() {
 
   if (isSent) {
     return (
-      <Card className="w-full max-w-md mx-auto mt-10 text-center animate-in fade-in zoom-in-95 duration-300">
+      <Card className="w-full max-w-md mx-auto text-center animate-in fade-in zoom-in-95 duration-300">
         <CardHeader>
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
             <Mail className="w-6 h-6 text-primary" />
@@ -71,7 +71,7 @@ export default function SignIn() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto mt-10">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>Use Google or your email to sign in</CardDescription>
