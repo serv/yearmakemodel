@@ -4,6 +4,7 @@ import { db } from "./db";
 import * as schema from "./db/schema";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
+import { sendMagicLinkEmail, sendVerificationEmail, sendPasswordResetEmail } from "./email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -18,7 +19,14 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    async sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
+      await sendPasswordResetEmail(user.email, url);
+    },
+    async sendVerificationEmail({ user, url }: { user: { email: string }; url: string }) {
+      await sendVerificationEmail(user.email, url);
+    },
   },
+
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -37,9 +45,9 @@ export const auth = betterAuth({
         token: string;
         url: string;
       }) => {
-        // TODO: Implement email sending logic
-        console.log(`Magic link for ${email}: ${url}`);
+        await sendMagicLinkEmail(email, url);
       },
     }),
   ],
 });
+
