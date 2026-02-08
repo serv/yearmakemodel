@@ -17,6 +17,16 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
+  user: {
+    additionalFields: {
+      username: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+
+
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, url }: { user: { email: string }; url: string }) {
