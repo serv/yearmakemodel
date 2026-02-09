@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,16 @@ export function PostCard({
   const makeTag = tags?.find((t) => t.type === "make");
   const modelTag = tags?.find((t) => t.type === "model");
 
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formattedDate = mounted 
+    ? new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : '';
+
   return (
     <Card className="flex flex-row overflow-hidden gap-0 py-0 relative group min-h-[140px]">
       {/* Dropdown Menu (Top Right) */}
@@ -62,7 +73,7 @@ export function PostCard({
                 {author.username || author.name}
             </span>
             <span>•</span>
-            <span className="shrink-0">{new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+            <span className="shrink-0">{formattedDate}</span>
           </div>
           <Link
             href={`/post/${post.id}`}

@@ -85,7 +85,7 @@ export function TopNav({
             </div>
           ) : (
             <span
-              className="text-[10px] sm:text-sm text-muted-foreground italic whitespace-nowrap"
+              className="text-[10px] sm:text-sm text-muted-foreground italic whitespace-nowrap hidden xs:inline"
               key="no-filters"
             >
               All Posts
@@ -172,7 +172,7 @@ export function TopNav({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/sign-in">
+            <Link href="/sign-in" className="hidden xs:block">
               <Button size="sm">Sign In</Button>
             </Link>
           )}
@@ -191,12 +191,57 @@ export function TopNav({
                   <SheetTitle className="text-left">Menu</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 py-8">
-                  <Link href="/garage" className="flex items-center text-lg font-medium">
+                  {session && (
+                    <div className="flex items-center gap-3 px-2 py-4 bg-muted/30 rounded-lg mb-2">
+                       <Avatar className="h-10 w-10">
+                        <AvatarImage src={session.user.image || ''} alt={session.user.name || ''} />
+                        <AvatarFallback>{session.user.name?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{session.user.name}</span>
+                        <span className="text-xs text-muted-foreground">{session.user.email}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!session && (
+                    <Link href="/sign-in" className="flex items-center text-lg font-medium px-2 py-1 xs:hidden">
+                      <User className="mr-2 h-5 w-5" />
+                      Sign In
+                    </Link>
+                  )}
+
+                  <Link href="/garage" className="flex items-center text-lg font-medium px-2 py-1">
                     <CarFront className="mr-2 h-5 w-5" />
                     My Garage
                   </Link>
-                  <div className="h-px bg-border" />
-                  <div className="space-y-4">
+
+                  {session && (
+                    <>
+                      <Link href={`/user/${session.user.id}`} className="flex items-center text-lg font-medium px-2 py-1">
+                        <User className="mr-2 h-5 w-5" />
+                        Profile
+                      </Link>
+                      <Link href="/settings" className="flex items-center text-lg font-medium px-2 py-1">
+                        <Settings className="mr-2 h-5 w-5" />
+                        Settings
+                      </Link>
+                      <button 
+                        onClick={async () => {
+                          await authClient.signOut();
+                          router.refresh();
+                        }}
+                        className="flex items-center text-lg font-medium px-2 py-1 text-destructive"
+                      >
+                        <LogOut className="mr-2 h-5 w-5" />
+                        Log out
+                      </button>
+                    </>
+                  )}
+
+                  <div className="h-px bg-border my-2" />
+                  
+                  <div className="space-y-4 px-2">
                     <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                       <Star className="h-4 w-4" /> Favorites
                     </h4>
